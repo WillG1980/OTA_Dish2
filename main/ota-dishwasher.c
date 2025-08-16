@@ -283,8 +283,8 @@ char *old_cycle = "";
     vTaskDelay(pdMS_TO_TICKS(5000));       // run for 5 seconds minimum
     while (target_time < get_unix_epoch()) { // until MAX time reached
           gpio_mask_set( Line->gpio_mask ); // set all pins to off
-          _LOG_I("Time to run: %d",Line->min_time);
-          vTaskDelay(pdMS_TO_TICKS(Line->min_time));       // pause for 5seconds
+          _LOG_I("Time to run: %d minute",Line->min_time);
+          vTaskDelay(pdMS_TO_TICKS(Line->min_time*MIN*SEC));       // pause for 5seconds
           }
      }
 
