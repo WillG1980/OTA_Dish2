@@ -297,9 +297,10 @@ void init_status(void) {
   _LOG_I("Ending Function");
 }
 // app_main
+
+
 void app_main(void) {
-printf("IDF version string: %s\n", esp_get_idf_version());
-  printf("%s\n", TAG);
+  printf("%s\n", APP_VERSION);
   ESP_ERROR_CHECK(nvs_flash_init());
   _init_setup();
   int resp_len = 0;
