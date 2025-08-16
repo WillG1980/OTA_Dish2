@@ -7,7 +7,7 @@
 #endif
 
 #ifndef TAG
-#define TAG "PROJECT_NAME "
+#define TAG PROJECT_NAME
 #endif
 
 #ifndef APP_VERSION
