@@ -29,6 +29,7 @@
 #define STR_HELPER(x) #x
 #define STR(x) STR_HELPER(x)
 #endif
+
 #ifndef VERSION_STR
 #ifdef VERSION
 #define VERSION_STR STR(VERSION)
@@ -72,7 +73,7 @@ void check_and_perform_ota(void) {
     char request_url[512];
     snprintf(request_url, sizeof(request_url),
              "%s/firmware.php?version=%s&mac=%02X%02X%02X%02X%02X%02X&project_name=%s",
-             BASE_URL, VERSION_STR,
+             BASE_URL, VERSION,
              mac[0], mac[1], mac[2], mac[3], mac[4], mac[5], TAG);
 
     int resp_len = 0;
