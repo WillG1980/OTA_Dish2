@@ -5,7 +5,7 @@
 #include "esp_log.h"
 #include <string.h>
 
-static const char *TAG = "HTTP_UTILS";
+
 #define HTTP_WRAPPER_BUF_DEFAULT 16384  // 16 KiB
 
 #ifndef HTTP_WRAPPER_TIMEOUT_MS
