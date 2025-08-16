@@ -1,0 +1,98 @@
+{
+  "version": 1,
+  "author": "OTA_DISHWASHER setup",
+  "editor": "wokwi",
+  "parts": [
+    { "type": "wokwi-esp32-devkit-v1", "id": "esp32", "top": -24, "left": -16, "attrs": {} },
+    {
+      "type": "wokwi-led",
+      "id": "led25",
+      "top": -118.8,
+      "left": 282.2,
+      "attrs": { "color": "red" }
+    },
+    {
+      "type": "wokwi-resistor",
+      "id": "r25",
+      "top": -90,
+      "left": 210,
+      "attrs": { "value": "220" }
+    },
+    {
+      "type": "wokwi-led",
+      "id": "led26",
+      "top": -61.2,
+      "left": 282.2,
+      "attrs": { "color": "green" }
+    },
+    {
+      "type": "wokwi-resistor",
+      "id": "r26",
+      "top": -30,
+      "left": 210,
+      "attrs": { "value": "220" }
+    },
+    { "type": "wokwi-led", "id": "led27", "top": 6, "left": 282.2, "attrs": { "color": "blue" } },
+    {
+      "type": "wokwi-resistor",
+      "id": "r27",
+      "top": 32.75,
+      "left": 211.2,
+      "attrs": { "value": "220" }
+    },
+    {
+      "type": "wokwi-led",
+      "id": "led32",
+      "top": 63.6,
+      "left": 282.2,
+      "attrs": { "color": "yellow" }
+    },
+    { "type": "wokwi-resistor", "id": "r32", "top": 90, "left": 210, "attrs": { "value": "220" } },
+    {
+      "type": "wokwi-led",
+      "id": "led33",
+      "top": 121.2,
+      "left": 282.2,
+      "attrs": { "color": "white" }
+    },
+    {
+      "type": "wokwi-resistor",
+      "id": "r33",
+      "top": 150,
+      "left": 210,
+      "attrs": { "value": "220" }
+    },
+    { "type": "wokwi-pushbutton", "id": "btn1", "top": -150, "left": -180, "attrs": {} },
+    {
+      "type": "wokwi-ntc-temperature-sensor",
+      "id": "ntc1",
+      "top": 180,
+      "left": -180,
+      "attrs": {}
+    }
+  ],
+  "connections": [
+    [ "esp32:D25", "r25:1", "green", [ "v0" ] ],
+    [ "r25:2", "led25:A", "green", [ "v0" ] ],
+    [ "led25:C", "esp32:GND.1", "black", [ "h0" ] ],
+    [ "esp32:D26", "r26:1", "green", [ "v0" ] ],
+    [ "r26:2", "led26:A", "green", [ "v0" ] ],
+    [ "led26:C", "esp32:GND.1", "black", [ "h0" ] ],
+    [ "esp32:D27", "r27:1", "green", [ "v0" ] ],
+    [ "r27:2", "led27:A", "green", [ "v0" ] ],
+    [ "led27:C", "esp32:GND.1", "black", [ "h0" ] ],
+    [ "esp32:D32", "r32:1", "green", [ "v0" ] ],
+    [ "r32:2", "led32:A", "green", [ "v0" ] ],
+    [ "led32:C", "esp32:GND.1", "black", [ "h0" ] ],
+    [ "esp32:D33", "r33:1", "green", [ "v0" ] ],
+    [ "r33:2", "led33:A", "green", [ "v0" ] ],
+    [ "led33:C", "esp32:GND.1", "black", [ "h0" ] ],
+    [ "esp32:D16", "btn1:1", "blue", [ "v0" ] ],
+    [ "btn1:2", "esp32:GND.2", "black", [ "h0" ] ],
+    [ "esp32:3V3", "ntc1:VCC", "red", [ "h0" ] ],
+    [ "esp32:GND.2", "ntc1:GND", "black", [ "h0" ] ],
+    [ "esp32:34", "ntc1:OUT", "purple", [ "v0" ] ],
+    [ "led26:C", "esp32:GND.1", "gray", [ "v0" ] ]
+  ],
+  "dependencies": {}
+}
