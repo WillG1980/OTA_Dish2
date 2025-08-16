@@ -276,13 +276,17 @@ char *old_cycle = "";
     time_t target_time = get_unix_epoch() + Line->max_time;
     COPY_STRING(ActiveStatus.Cycle, Line->name_cycle);
     COPY_STRING(ActiveStatus.Step, Line->name_step);
-    printf("\n%s:%s->%s: Eta %s GPIO-mask %lld", ActiveStatus.Program, Line->name_cycle, Line->name_step, get_us_time_string(target_time),Line->gpio_mask);
+    printf("\n%s:%s->%s: Eta %s GPIO-mask %lld\n", ActiveStatus.Program, Line->name_cycle, Line->name_step, get_us_time_string(target_time),Line->gpio_mask);
     print_masked_bits(Line->gpio_mask,ALL_ACTORS);
+
+
+    vTaskDelay(pdMS_TO_TICKS(5000));       // run for 5 seconds minimum
     while (target_time < get_unix_epoch()) { // until MAX time reached
           gpio_mask_set( Line->gpio_mask ); // set all pins to off
-      vTaskDelay(pdMS_TO_TICKS(5000));       // pause for 5seconds
-    }
-  }
+          vTaskDelay(pdMS_TO_TICKS(Line->min_time));       // pause for 5seconds
+          }
+     }
+     
   // TODO: implement actual runtime control of GPIOs, temps, timing, etc.
   // For now block forever (or you could vTaskDelete(NULL) to end the task)
   printf("\nIn final closeout - power cycle to restart/open door\n");
