@@ -122,6 +122,14 @@ static void _init_setup(void) {
     counter--;
   }
   check_and_perform_ota();
+  if(strcasecmp(ActiveStatus.Program,"Updating")==0){
+    while(1){
+      vTaskDelay(pdMS_TO_TICKS(1000));
+      _LOG_I("Waiting for OTA Update to reboot");
+
+    }
+  }
+
 
   initialize_sntp_blocking();
   init_switchesandleds();
