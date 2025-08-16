@@ -254,7 +254,7 @@ char *old_cycle = "";
     gpio_mask_set( HEAT | SPRAY | INLET | DRAIN | SOAP ); // set all pins to off
     vTaskDelay(pdMS_TO_TICKS(3000));
     _LOG_I("DE-Activating all pins");
-    gpio_mask_clear( HEAT | SPRAY | INLET | DRAIN | SOAP ); // set all pins to off
+      gpio_mask_clear( HEAT | SPRAY | INLET | DRAIN | SOAP ); // set all pins to off
 
     if (strcmp(old_cycle, Line->name_cycle) != 0) {
       printf("\n-- new cycle: %s --\n", Line->name_cycle);
@@ -263,8 +263,9 @@ char *old_cycle = "";
     time_t target_time = get_unix_epoch() + Line->max_time;
     COPY_STRING(ActiveStatus.Cycle, Line->name_cycle);
     COPY_STRING(ActiveStatus.Step, Line->name_step);
-    printf("\n%s:%s->%s: Eta %s", ActiveStatus.Program, Line->name_cycle,
-           Line->name_step, get_us_time_string(target_time));
+    printf("\n%s:%s->%s: Eta %s GPIO-mask %lld", ActiveStatus.Program, Line->name_cycle,
+           Line->name_step, get_us_time_string(target_time),Line->gpio_mask);
+           print_masked_bits(Line->gpio_mask,ALL_ACTORS);
     while (target_time < get_unix_epoch()) { // until MAX time reached
           gpio_mask_set( Line->gpio_mask ); // set all pins to off
       vTaskDelay(pdMS_TO_TICKS(5000));       // pause for 5seconds
