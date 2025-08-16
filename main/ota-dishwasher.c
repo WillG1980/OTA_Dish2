@@ -283,10 +283,11 @@ char *old_cycle = "";
     vTaskDelay(pdMS_TO_TICKS(5000));       // run for 5 seconds minimum
     while (target_time < get_unix_epoch()) { // until MAX time reached
           gpio_mask_set( Line->gpio_mask ); // set all pins to off
+          _LOG_I("Time to run: %d",Line->min_time);
           vTaskDelay(pdMS_TO_TICKS(Line->min_time));       // pause for 5seconds
           }
      }
-     
+
   // TODO: implement actual runtime control of GPIOs, temps, timing, etc.
   // For now block forever (or you could vTaskDelete(NULL) to end the task)
   printf("\nIn final closeout - power cycle to restart/open door\n");
