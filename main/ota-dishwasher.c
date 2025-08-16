@@ -5,6 +5,10 @@
 #ifndef TAG
 #define TAG PROJECT_NAME
 #endif
+#ifndef APP_VERSION
+#define APP_VERSION VERSION
+#endif
+
 #include "driver/gpio.h"
 #include "dishwasher_programs.h" // For BASE_URL and VERSION
 #include "driver/gpio.h"
@@ -36,6 +40,8 @@
 #include "local_time.h"
 #include "local_wifi.h"
 #include "logger.h"
+
+
 #define COPY_STRING(dest, src)                                                 \
   do {                                                                         \
     strncpy((dest), (src), sizeof(dest) - 1);                                  \
@@ -44,9 +50,6 @@
 // global status
 status_struct ActiveStatus;
 #include "esp_system.h"
-
-
-
 
 // prototypes (task functions must be of type void f(void *))
 static void monitor_task_buttons(void *pvParameters);
@@ -300,7 +303,7 @@ void init_status(void) {
 
 
 void app_main(void) {
-  printf("%s\n", APP_VERSION);
+  printf("Version: %s\n", APP_VERSION);
   ESP_ERROR_CHECK(nvs_flash_init());
   _init_setup();
   int resp_len = 0;

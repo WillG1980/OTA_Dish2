@@ -1,6 +1,20 @@
 #ifndef DISHWASHER_PROGRAM_H
 #define DISHWASHER_PROGRAM_H
 
+
+#ifndef PROJECT_NAME
+#define PROJECT_NAME "OTA-Dishwasher"
+#endif
+
+#ifndef TAG
+#define TAG "ID - PROJECT_NAME "
+#endif
+
+#ifndef APP_VERSION
+#define APP_VERSION VERSION
+#endif
+
+ 
 #include "driver/gpio.h"
 #include "esp_crt_bundle.h"
 #include "esp_err.h"
@@ -79,9 +93,6 @@ static inline void IRAM_ATTR gpio_mask_toggle(uint64_t mask) {
 
 
 
-#ifndef APP_VERSION
-#define APP_VERSION VERSION
-#endif
 
 #define _LOG_I(fmt, ...)   ESP_LOGI(TAG, "[%s-%s:%d]= " fmt, __func__, APP_VERSION, __LINE__, ##__VA_ARGS__)
 #define _LOG_W(fmt, ...)   ESP_LOGW(TAG, "[%s-%s:%d]= " fmt, __func__, APP_VERSION, __LINE__, ##__VA_ARGS__)
