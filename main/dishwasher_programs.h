@@ -94,10 +94,10 @@ static inline void IRAM_ATTR gpio_mask_toggle(uint64_t mask) {
 
 
 
-#define _LOG_I(fmt, ...)   ESP_LOGI(TAG, "[%s-%s:%d]= " fmt, __func__, APP_VERSION, __LINE__, ##__VA_ARGS__)
-#define _LOG_W(fmt, ...)   ESP_LOGW(TAG, "[%s-%s:%d]= " fmt, __func__, APP_VERSION, __LINE__, ##__VA_ARGS__)
-#define _LOG_E(fmt, ...)   ESP_LOGE(TAG, "[%s-%s:%d]= " fmt, __func__, APP_VERSION, __LINE__, ##__VA_ARGS__)
-#define _LOG_D(fmt, ...)   ESP_LOGD(TAG, "[%s-%s:%d]= " fmt, __func__, APP_VERSION, __LINE__, ##__VA_ARGS__)
+#define _LOG_I(fmt, ...)   ESP_LOGI(TAG, "[Ver:%s Func:%s:%d]= " fmt, APP_VERSION, __func__, __LINE__, ##__VA_ARGS__)
+#define _LOG_W(fmt, ...)   ESP_LOGW(TAG, "[Ver:%s Func:%s:%d]= " fmt, APP_VERSION, __func__, __LINE__, ##__VA_ARGS__)
+#define _LOG_E(fmt, ...)   ESP_LOGE(TAG, "[Ver:%s Func:%s:%d]= " fmt, APP_VERSION, __func__, __LINE__, ##__VA_ARGS__)
+#define _LOG_D(fmt, ...)   ESP_LOGD(TAG, "[Ver:%s Func:%s:%d]= " fmt, APP_VERSION, __func__, __LINE__, ##__VA_ARGS__)
 
 #ifndef BIT64
 #define BIT64(n) (1ULL << (n))
