@@ -29,6 +29,6 @@ if errorlevel 1 (
 set WEB_FIRMWARE="Y:\firmware\ota-dishwasher\%VERSION%.bin"
 rem mkdir %WEB_FIRMWARE%
 copy C:\Projects\esp\OTA_DISH2\build\ota-dishwasher.bin  %WEB_FIRMWARE%
-idf.py flash monitor
+rem idf.py flash monitor
 
 
