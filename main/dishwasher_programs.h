@@ -1,7 +1,6 @@
 #ifndef DISHWASHER_PROGRAM_H
 #define DISHWASHER_PROGRAM_H
 
-<<<<<<< HEAD
 #include "driver/gpio.h"
 #include "esp_crt_bundle.h"
 #include "esp_err.h"
@@ -79,36 +78,15 @@ static inline void IRAM_ATTR gpio_mask_toggle(uint64_t mask) {
 }
 
 
-=======
-#include <driver/gpio.h> // For GPIO_NUM_X definitions
-#include <stddef.h>      // For size_t
-#include <stdint.h>
-
-#define _LOG_I(fmt, ...)                                                       \
-  ESP_LOGI(__TAG__, "[%s-%s:%d] " fmt, __func__, __VERSION__, __LINE__,        \
-           ##__VA_ARGS__)
-#define _LOG_W(fmt, ...)                                                       \
-  ESP_LOGW(__TAG__, "[%s-%s:%d] " fmt, __func__, __VERSION__, __LINE__,        \
-           ##__VA_ARGS__)
-#define _LOG_E(fmt, ...)                                                       \
-  ESP_LOGE(__TAG__, "[%s-%s:%d] " fmt, __func__, __VERSION__, __LINE__,        \
-           ##__VA_ARGS__)
-#define _LOG_D(fmt, ...)                                                       \
-  ESP_LOGD(__TAG__, "[%s-%s:%d] " fmt, __func__, __VERSION__, __LINE__,        \
-           ##__VA_ARGS__)
->>>>>>> ecef6b0d4d9f7b4ad0e2dea07c6d2b948dae4cbd
 
 #ifndef APP_VERSION
 #define APP_VERSION VERSION
 #endif
-<<<<<<< HEAD
 
 #define _LOG_I(fmt, ...)   ESP_LOGI(TAG, "[%s-%s:%d]= " fmt, __func__, APP_VERSION, __LINE__, ##__VA_ARGS__)
 #define _LOG_W(fmt, ...)   ESP_LOGW(TAG, "[%s-%s:%d]= " fmt, __func__, APP_VERSION, __LINE__, ##__VA_ARGS__)
 #define _LOG_E(fmt, ...)   ESP_LOGE(TAG, "[%s-%s:%d]= " fmt, __func__, APP_VERSION, __LINE__, ##__VA_ARGS__)
 #define _LOG_D(fmt, ...)   ESP_LOGD(TAG, "[%s-%s:%d]= " fmt, __func__, APP_VERSION, __LINE__, ##__VA_ARGS__)
-=======
->>>>>>> ecef6b0d4d9f7b4ad0e2dea07c6d2b948dae4cbd
 
 #ifndef BIT64
 #define BIT64(n) (1ULL << (n))
@@ -124,17 +102,13 @@ static inline void IRAM_ATTR gpio_mask_toggle(uint64_t mask) {
 #define SENSOR_ENABLE (BIT64(GPIO_NUM_18))
 #define CLEANLIGHT (BIT64(GPIO_NUM_19))
 #define LIGHT3 (BIT64(GPIO_NUM_21))
-<<<<<<< HEAD
 
 static const uint64_t ALL_ACTORS = HEAT | SPRAY | INLET | DRAIN | SOAP;
-=======
->>>>>>> ecef6b0d4d9f7b4ad0e2dea07c6d2b948dae4cbd
 
 #define NUM_PROGRAMS 3
 
 #define SEC (1ULL)     // 1 second in milliseconds
 #define MIN (60 * SEC) // 60 seconds in milliseconds
-<<<<<<< HEAD
 #define SAFE_STR(p) ((p) ? (p) : "")
 #define NUM_DEVICES 8
 
@@ -145,18 +119,6 @@ typedef struct {
   char *name_step;
   uint32_t min_time;
   uint32_t max_time; 
-=======
-
-#define NUM_DEVICES 8
-
-static const char *FIRMWARE_URL = "https://house.sjcnu.com/esp32/firmware/" OTA_VERSION "/" PROJECT_NAME ".bin";
-
-typedef struct {
-  const char *name_cycle;
-  const char *name_step;
-  uint32_t min_time; // milliseconds
-  uint32_t max_time; // milliseconds
->>>>>>> ecef6b0d4d9f7b4ad0e2dea07c6d2b948dae4cbd
   int min_temp;
   int max_temp;
   uint64_t gpio_mask; // BIT64 mask for all pins to set HIGH
@@ -166,11 +128,8 @@ typedef struct {
   const char *name;
   const ProgramLineStruct *lines;
   size_t num_lines;
-<<<<<<< HEAD
   int64_t min_time;
   int64_t max_time;    
-=======
->>>>>>> ecef6b0d4d9f7b4ad0e2dea07c6d2b948dae4cbd
 } Program_Entry;
 
 // Normal program
@@ -182,11 +141,7 @@ static const ProgramLineStruct NormalProgramLines[] = {
     {"Prep", "drain", 2 * MIN, 0, 0, 0, DRAIN},
 
     {"wash", "fill", 3 * MIN, 0, 0, 0, INLET},
-<<<<<<< HEAD
     {"wash", "Warm", 5 * MIN, 40 * MIN, 130, 140,
-=======
-    {"wash", "preheat", 5 * MIN, 40 * MIN, 130, 140,
->>>>>>> ecef6b0d4d9f7b4ad0e2dea07c6d2b948dae4cbd
      HEAT | SPRAY}, // heat water to at _least_ 130
     {"wash", "soap", 1 * MIN, 0, 140, 150, HEAT | SPRAY | SOAP},
     {"wash", "wash", 45 * MIN, 75 * MIN, 150, 150, HEAT | SPRAY},
@@ -208,11 +163,7 @@ static const ProgramLineStruct NormalProgramLines[] = {
     {"cool", "vent", 29 * MIN, 0, 0, 0, HEAT},
     {"fini", "clean", 0, 0, 0, 0, 0}};
 // Test program: all times 30 seconds, temps copied from Normal
-<<<<<<< HEAD
 static const ProgramLineStruct TesterProgramLines[] = {
-=======
-static const ProgramLineStruct TestProgramLines[] = {
->>>>>>> ecef6b0d4d9f7b4ad0e2dea07c6d2b948dae4cbd
     {"init", "setup", 1, 0, 0, 0, 0},
 
     {"Prep", "fill", 30 * SEC, 0, 0, 0, INLET},
@@ -220,11 +171,7 @@ static const ProgramLineStruct TestProgramLines[] = {
     {"Prep", "drain", 2 * MIN, 0, 0, 0, DRAIN},
 
     {"wash", "fill", 30 * SEC, 0, 0, 0, INLET},
-<<<<<<< HEAD
     {"wash", "Warm", 0, 30 * SEC, 130, 130, HEAT | SPRAY},
-=======
-    {"wash", "preheat", 0, 30 * SEC, 130, 130, HEAT | SPRAY},
->>>>>>> ecef6b0d4d9f7b4ad0e2dea07c6d2b948dae4cbd
     {"wash", "soap", 30 * SEC, 0, 140, 140, HEAT | SPRAY | SOAP},
     {"wash", "wash", 30 * SEC, 30 * SEC, 152, 152, HEAT | SPRAY},
     {"wash", "drain", 2 * MIN, 0, 0, 0, DRAIN},
@@ -255,11 +202,7 @@ static const ProgramLineStruct HiTempProgramLines[] = {
     {"Prep", "drain", 2 * MIN, 0, 0, 0, DRAIN},
 
     {"wash", "fill", 3 * MIN, 0, 0, 0, INLET},
-<<<<<<< HEAD
     {"wash", "Warm", 0, 40 * MIN, 160, 160, HEAT | SPRAY},
-=======
-    {"wash", "preheat", 0, 40 * MIN, 160, 160, HEAT | SPRAY},
->>>>>>> ecef6b0d4d9f7b4ad0e2dea07c6d2b948dae4cbd
     {"wash", "soap", 1 * MIN, 0, 160, 160, HEAT | SPRAY | SOAP},
     {"wash", "wash", 45 * MIN, 75 * MIN, 160, 160, HEAT | SPRAY},
     {"wash", "drain", 2 * MIN, 0, 0, 0, DRAIN},
@@ -280,20 +223,10 @@ static const ProgramLineStruct HiTempProgramLines[] = {
     {"cool", "vent", 29 * MIN, 0, 140, 140, HEAT},
     {"fini", "clean", 0, 0, 0, 0, 0}};
 
-<<<<<<< HEAD
 static Program_Entry Programs[NUM_PROGRAMS] = {    
     {"Tester",    TesterProgramLines,      sizeof(TesterProgramLines) / sizeof(TesterProgramLines[0])},
     {"Normal",  NormalProgramLines,      sizeof(NormalProgramLines) / sizeof(NormalProgramLines[0])},    
     {"HiTemp", HiTempProgramLines,      sizeof(HiTempProgramLines) / sizeof(HiTempProgramLines[0])}};
-=======
-static const Program_Entry Programs[NUM_PROGRAMS] = {
-    {"Test", TestProgramLines,
-     sizeof(TestProgramLines) / sizeof(TestProgramLines[0])},
-    {"Normal", NormalProgramLines,
-     sizeof(NormalProgramLines) / sizeof(NormalProgramLines[0])},
-    {"Hi-Temp", HiTempProgramLines,
-     sizeof(HiTempProgramLines) / sizeof(HiTempProgramLines[0])}};
->>>>>>> ecef6b0d4d9f7b4ad0e2dea07c6d2b948dae4cbd
 
 #define setCharArray(target, value)                                            \
   do {                                                                         \
@@ -301,7 +234,6 @@ static const Program_Entry Programs[NUM_PROGRAMS] = {
     (target)[sizeof(target) - 1] = '\0';                                       \
   } while (0)
 
-<<<<<<< HEAD
 // Print bits from "value" according to which positions are flagged in "mask"
 static inline void print_masked_bits(uint64_t value, uint64_t mask) {
     for (int bit = 63; bit >= 0; bit--) {
@@ -313,8 +245,6 @@ static inline void print_masked_bits(uint64_t value, uint64_t mask) {
 }
 
 
-=======
->>>>>>> ecef6b0d4d9f7b4ad0e2dea07c6d2b948dae4cbd
 typedef struct {
   int CurrentTemp;
   int CurrentPower;

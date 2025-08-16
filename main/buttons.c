@@ -1,4 +1,3 @@
-<<<<<<< HEAD
 // main.c
 #ifndef PROJECT_NAME
 #define PROJECT_NAME "OTA-Dishwasher"
@@ -7,8 +6,6 @@
 #define TAG PROJECT_NAME
 #endif
 #include "dishwasher_programs.h"
-=======
->>>>>>> ecef6b0d4d9f7b4ad0e2dea07c6d2b948dae4cbd
 #include "buttons.h"
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
@@ -28,10 +25,7 @@ led_t Leds[]={
   {false,GPIO_NUM_19,"Status Identifier"}
 };
 void init_switchesandleds() {
-<<<<<<< HEAD
   _LOG_I("Start of function");
-=======
->>>>>>> ecef6b0d4d9f7b4ad0e2dea07c6d2b948dae4cbd
   for (int i = 0; i < sizeof(Buttons) / sizeof(Buttons[0]); i++) {
     gpio_config_t sw_conf = {
       .pin_bit_mask = (1ULL << Buttons[i].Pin),
@@ -64,13 +58,9 @@ void init_switchesandleds() {
     .intr_type = GPIO_INTR_DISABLE
   };
   gpio_config(&gnd_conf);
-<<<<<<< HEAD
 
   gpio_set_level(GND_GPIO, 0); // Provide GND ref
   _LOG_I("End of function");
-=======
-  gpio_set_level(GND_GPIO, 0); // Provide GND ref
->>>>>>> ecef6b0d4d9f7b4ad0e2dea07c6d2b948dae4cbd
 }
 
 void monitor_task_button(void *arg) {

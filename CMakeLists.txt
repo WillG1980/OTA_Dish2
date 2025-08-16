@@ -32,12 +32,9 @@ add_compile_definitions(
   VERSION="${GIT_TAG}"
   PROJECT_NAME="${PROJECT_NAME_STR}"
  # TAG="Dishwasher"
-<<<<<<< HEAD
   WIFI_SSID_REAL="House619"
   WIFI_PASS_REAL="Wifi6860"
 
-=======
->>>>>>> ecef6b0d4d9f7b4ad0e2dea07c6d2b948dae4cbd
 )
 
 project(${PROJECT_NAME_STR})

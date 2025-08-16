@@ -1,5 +1,4 @@
 @echo off
-<<<<<<< HEAD
 
 idf.py build
 if errorlevel 1 (
@@ -7,8 +6,6 @@ if errorlevel 1 (
     exit /b 1
 )
 
-=======
->>>>>>> ecef6b0d4d9f7b4ad0e2dea07c6d2b948dae4cbd
 echo Add new files
 git add .
 echo Commit changed files
@@ -29,15 +26,9 @@ if errorlevel 1 (
     exit /b 1
 )
 @echo on
-<<<<<<< HEAD
 set WEB_FIRMWARE="Y:\firmware\ota-dishwasher\%VERSION%.bin"
 mkdir %WEB_FIRMWARE%
 copy C:\Projects\esp\OTA_DISHWASHER\build\*.bin  %WEB_FIRMWARE%
 #idf.py flash monitor
-=======
-set WEB_FIRMWARE="Y:\Apps\Docker\appdata\lamp\web\docroot\www\esp32\firmware\%VERSION%"
-mkdir %WEB_FIRMWARE%
-copy C:\Projects\esp\OTA_DISHWASHER\build\*.bin  %WEB_FIRMWARE%
->>>>>>> ecef6b0d4d9f7b4ad0e2dea07c6d2b948dae4cbd
 
 

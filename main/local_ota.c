@@ -1,4 +1,3 @@
-<<<<<<< HEAD
 #include "dishwasher_programs.h" // For BASE_URL and VERSION
 #include "esp_http_client.h"
 #include "esp_log.h"
@@ -86,19 +85,6 @@ static void _get_ota(const char *url);
 
 
 static void _get_ota(const char *url) {
-=======
-#include <string.h>
-#include "esp_https_ota.h"
-#include "esp_err.h"
-#include "esp_log.h"
-#include "esp_crt_bundle.h"
-
-extern const char *TAG;
-extern const char *FIRMWARE_URL;
-
-
-void _get_ota() {
->>>>>>> ecef6b0d4d9f7b4ad0e2dea07c6d2b948dae4cbd
     esp_http_client_config_t config = {
         .url = url,
     };
@@ -116,7 +102,6 @@ void _get_ota() {
     esp_err_t ret = esp_https_ota(&ota_config);
 
     if (ret == ESP_OK) {
-<<<<<<< HEAD
         _LOG_I("OTA update successful. Rebooting...");
         vTaskDelay(pdMS_TO_TICKS(10000000));
         // esp_restart(); // Uncomment for production
@@ -124,11 +109,3 @@ void _get_ota() {
         _LOG_E("OTA update failed: %s", esp_err_to_name(ret));
     }
 }
-=======
-        ESP_LOGI(TAG, "OTA update successful. Rebooting...");
-        // esp_restart(); // Uncomment this in production
-    } else {
-        ESP_LOGE(TAG, "OTA update failed: %s", esp_err_to_name(ret));
-    }
-}
->>>>>>> ecef6b0d4d9f7b4ad0e2dea07c6d2b948dae4cbd
