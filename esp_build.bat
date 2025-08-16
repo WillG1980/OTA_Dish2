@@ -27,7 +27,7 @@ if errorlevel 1 (
 )
 @echo on
 set WEB_FIRMWARE="Y:\firmware\ota-dishwasher\%VERSION%.bin"
-mkdir %WEB_FIRMWARE%
+rem mkdir %WEB_FIRMWARE%
 copy C:\Projects\esp\OTA_DISHWASHER\build\*.bin  %WEB_FIRMWARE%
 #idf.py flash monitor
 
