@@ -19,6 +19,7 @@
 // Forward declarations
 static esp_err_t _http_event_handler(esp_http_client_event_t *evt);
 static void _get_ota(const char *url);
+extern status_struct ActiveStatus;
 
 /**
  * Performs an HTTP/HTTPS GET request and returns the body in a malloc'd buffer.
@@ -75,6 +76,8 @@ static void _get_ota(const char *url);
         _LOG_I("Firmware is up-to-date");
     } else if (strncasecmp(response, "http", 4) == 0) {
         _LOG_I("New firmware URL provided, starting OTA: %s", response);
+        setCharArray(ActiveStatus.Program,"Updating");
+
         _get_ota(response);
     } else {
         _LOG_W("Unexpected response from server %s",response);
@@ -104,7 +107,7 @@ static void _get_ota(const char *url) {
     if (ret == ESP_OK) {
         _LOG_I("OTA update successful. Rebooting...");
         vTaskDelay(pdMS_TO_TICKS(10000000));
-        // esp_restart(); // Uncomment for production
+         esp_restart(); // Uncomment for production
     } else {
         _LOG_E("OTA update failed: %s", esp_err_to_name(ret));
     }
