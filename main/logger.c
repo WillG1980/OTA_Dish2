@@ -34,7 +34,7 @@
 #include "lwip/netdb.h"
 #include "dishwasher_programs.h"
 
-#define TAG "TCP_LOGGER"
+
 
 // ---- Internal state ----
 static char *log_buffer = NULL;

@@ -68,7 +68,7 @@ void prepare_programs(void) {
   bool found = false;
   long long min_time = 0;
   long long max_time = 0;
-  char *old_cycle = "";
+  
 
   for (int i = 0; i < NUM_PROGRAMS; i++) {
     current = Programs[i];
