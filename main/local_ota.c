@@ -190,6 +190,7 @@ static void _get_ota_task(void *param) {
     if (ret == ESP_OK) {
         setCharArray(ActiveStatus.FirmwareStatus,"Pending Reboot");        
         // 1 minutes
+        _LOG_I("Rebooting in 1 minute");
         vTaskDelay(pdMS_TO_TICKS(1 * MIN*SEC));
         _LOG_I("Rebooting now after OTA delay.");
         free(url);
