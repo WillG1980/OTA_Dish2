@@ -184,17 +184,19 @@ static void _get_ota_task(void *param) {
     };
     setCharArray(ActiveStatus.FirmwareStatus,"Starting Update");
     _LOG_I("Starting OTA update from %s ...", url);
-    esp_err_t ret = esp_https_ota(&ota_cfg);
 
+    esp_err_t ret = esp_https_ota(&ota_cfg);
+    _LOG_I("Flash finished");
     if (ret == ESP_OK) {
         setCharArray(ActiveStatus.FirmwareStatus,"Pending Reboot");        
-        // 10 minutes
+        // 1 minutes
         vTaskDelay(pdMS_TO_TICKS(1 * MIN*SEC));
         _LOG_I("Rebooting now after OTA delay.");
         free(url);
         s_ota_task = NULL;
         esp_restart(); // never returns
     } else {
+        setCharArray(ActiveStatus.FirmwareStatus,"Firmware Failed");        
         _LOG_E("OTA update failed: %s", esp_err_to_name(ret));
         free(url);
         s_ota_task = NULL;
