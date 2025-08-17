@@ -248,14 +248,12 @@ static Program_Entry Programs[NUM_PROGRAMS] = {
 // Print bits from "value" according to which positions are flagged in "mask"
 
 static inline void print_masked_bits(uint64_t value, uint64_t mask) {
-_LOG_I("Print masked pins");
     for (int bit = 63; bit >= 0; bit--) {
         if (mask & (1ULL << bit)) {
             printf("%d", (int)((value >> bit) & 1ULL));
         }
     }    
     printf("\n");
-_LOG_I("Done printing masked pins");    
 }
 
 
