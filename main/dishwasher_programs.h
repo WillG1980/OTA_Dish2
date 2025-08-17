@@ -136,7 +136,7 @@ static const uint64_t ALL_ACTORS = HEAT | SPRAY | INLET | DRAIN | SOAP;
 #define NUM_PROGRAMS 3
 
 #define SEC (1000)     // 1 second in milliseconds
-#define MIN (10 * SEC) // 60 seconds in milliseconds
+#define MIN (60000) // 60 seconds in milliseconds
 #define SAFE_STR(p) ((p) ? (p) : "")
 #define NUM_DEVICES 8
 

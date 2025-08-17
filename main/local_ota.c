@@ -191,7 +191,8 @@ static void _get_ota_task(void *param) {
         setCharArray(ActiveStatus.FirmwareStatus,"Pending Reboot");        
         // 1 minutes
         _LOG_I("Rebooting in 1 minute");
-        vTaskDelay(pdMS_TO_TICKS(1 * MIN*SEC));
+        
+        vTaskDelay(pdMS_TO_TICKS(1 * MIN));
         _LOG_I("Rebooting now after OTA delay.");
         free(url);
         s_ota_task = NULL;

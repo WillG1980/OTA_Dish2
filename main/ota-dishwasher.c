@@ -145,7 +145,7 @@ static void _init_setup(void) {
   }
   check_and_perform_ota();
   if (strcasecmp(ActiveStatus.Program, "Updating") == 0) {
-    int timer=1*MIN*SEC;
+    int timer=1*MIN;
     while (1) {
       _LOG_I("Waiting (%d) for OTA Update to reboot %s",timer,ActiveStatus.FirmwareStatus);
       vTaskDelay(pdMS_TO_TICKS(timer));
@@ -293,7 +293,7 @@ static void run_program(void *pvParameters) {
     int TTR =
         (Line->max_time > Line->min_time) ? Line->max_time : Line->min_time;
 
-    time_t target_time = get_unix_epoch() + TTR * MIN * SEC;
+    time_t target_time = get_unix_epoch() + TTR * MIN;
     COPY_STRING(ActiveStatus.Cycle, Line->name_cycle);
     COPY_STRING(ActiveStatus.Step, Line->name_step);
 
