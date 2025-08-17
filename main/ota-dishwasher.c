@@ -8,7 +8,6 @@
 #ifndef APP_VERSION
 #define APP_VERSION VERSION
 #endif
-
 #include "dishwasher_programs.h" // For BASE_URL and VERSION
 #include "driver/gpio.h"
 #include "esp_crt_bundle.h"
@@ -31,10 +30,8 @@
 #include <stdlib.h>
 #include <string.h>
 
-
 // #include "analog.h"
 #include "dishwasher_programs.h"
-
 #include "buttons.h"
 #include "driver/gpio.h"
 #include "esp_sleep.h"
@@ -85,6 +82,10 @@ static void run_program(void *pvParameters);
 static void _init_setup(void);
 static void init_status();
 void print_status();
+
+
+
+
 
 // ----- implementations -----
 void prepare_programs(void) {
@@ -338,6 +339,13 @@ void init_status(void) {
 // app_main
 
 void app_main(void) {
+
+
+  esp_log_level_set("*", ESP_LOG_INFO);
+    esp_log_level_set("wifi", ESP_LOG_WARN);
+    esp_log_level_set("phy", ESP_LOG_WARN);
+    
+
   printf("Version: %s\n", APP_VERSION);
   ESP_ERROR_CHECK(nvs_flash_init());
   _init_setup();
