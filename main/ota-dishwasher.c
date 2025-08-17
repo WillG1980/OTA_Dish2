@@ -145,9 +145,11 @@ static void _init_setup(void) {
   }
   check_and_perform_ota();
   if (strcasecmp(ActiveStatus.Program, "Updating") == 0) {
+    int timer=1*MIN*SEC;
     while (1) {
-      vTaskDelay(pdMS_TO_TICKS(1*MIN*SEC));
-      _LOG_I("Waiting for OTA Update to reboot %s",ActiveStatus.FirmwareStatus);
+      
+      vTaskDelay(pdMS_TO_TICKS(timer));
+      _LOG_I("Waiting (%d) for OTA Update to reboot %s",timer,ActiveStatus.FirmwareStatus);
     }
   }
 
