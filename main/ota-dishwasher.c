@@ -45,48 +45,28 @@
 #include "driver/gpio.h"
 
 
-
-
-
-#include "esp_sleep.h"
-#include "esp_wifi.h"
-#include "driver/gpio.h"
-
 static void enter_ship_mode_forever(void) {
-    // 1) Quiesce radios/subsystems you used
+    // Stop radios/subsystems (ignore errors if not started)
     esp_wifi_stop();
 #if CONFIG_BT_ENABLED
     esp_bt_controller_disable();
 #endif
 
-    // 2) Put pins in low-leakage states (IMPORTANT for real µA numbers)
-    //    - Unused pins: inputs, no pulls
-    //    - Pins that must hold a level (keep FETs off, etc.): set level, then hold
-    // Example (adjust to your board):
+    // Put your pins in safe states here (example only)
     // gpio_set_direction(GPIO_NUM_27, GPIO_MODE_OUTPUT);
     // gpio_set_level(GPIO_NUM_27, 0);
-    // gpio_hold_en(GPIO_NUM_27);
-    // gpio_deep_sleep_hold_en();  // enables all holds during deep sleep
+    // gpio_hold_en(GPIO_NUM_27);           // if you need levels held in deep sleep
+    // gpio_deep_sleep_hold_en();           // enable holds across deep sleep
 
-    // 3) Power down RTC domains as much as possible (defaults are already low)
-    esp_sleep_pd_config(ESP_PD_DOMAIN_RTC_PERIPH, ESP_PD_OPTION_OFF);
-    esp_sleep_pd_config(ESP_PD_DOMAIN_RTC_SLOW_MEM, ESP_PD_OPTION_OFF);
-    esp_sleep_pd_config(ESP_PD_DOMAIN_RTC_FAST_MEM, ESP_PD_OPTION_OFF);
-
-    // 4) Ensure no wake sources are set
-#ifdef ESP_SLEEP_WAKEUP_ALL
+    // Make sure you haven't enabled any wakeups
+#if defined(ESP_SLEEP_WAKEUP_ALL)
     esp_sleep_disable_wakeup_source(ESP_SLEEP_WAKEUP_ALL);
 #endif
-    // (If your code never enabled any wakeups, this is effectively already true.)
+    // (If you enabled specific wakeups earlier, disable them explicitly)
 
-    // Optional: give logs a moment to flush
-    vTaskDelay(pdMS_TO_TICKS(100));
-
-    // 5) Sleep forever (only EN/reset or power cycle will wake)
-    esp_deep_sleep_start();
+    vTaskDelay(pdMS_TO_TICKS(100));        // let logs flush a moment
+    esp_deep_sleep_start();                 // won’t return; only EN/power-cycle wakes it
 }
-
-
 
 
 
