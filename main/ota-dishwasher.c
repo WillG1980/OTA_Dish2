@@ -40,6 +40,80 @@
 #include "local_time.h"
 #include "local_wifi.h"
 #include "logger.h"
+#include "esp_sleep.h"
+#include "esp_wifi.h"
+#include "driver/gpio.h"
+
+
+
+
+
+#include "esp_sleep.h"
+#include "esp_wifi.h"
+#include "driver/gpio.h"
+
+static void enter_ship_mode_forever(void) {
+    // 1) Quiesce radios/subsystems you used
+    esp_wifi_stop();
+#if CONFIG_BT_ENABLED
+    esp_bt_controller_disable();
+#endif
+
+    // 2) Put pins in low-leakage states (IMPORTANT for real µA numbers)
+    //    - Unused pins: inputs, no pulls
+    //    - Pins that must hold a level (keep FETs off, etc.): set level, then hold
+    // Example (adjust to your board):
+    // gpio_set_direction(GPIO_NUM_27, GPIO_MODE_OUTPUT);
+    // gpio_set_level(GPIO_NUM_27, 0);
+    // gpio_hold_en(GPIO_NUM_27);
+    // gpio_deep_sleep_hold_en();  // enables all holds during deep sleep
+
+    // 3) Power down RTC domains as much as possible (defaults are already low)
+    esp_sleep_pd_config(ESP_PD_DOMAIN_RTC_PERIPH, ESP_PD_OPTION_OFF);
+    esp_sleep_pd_config(ESP_PD_DOMAIN_RTC_SLOW_MEM, ESP_PD_OPTION_OFF);
+    esp_sleep_pd_config(ESP_PD_DOMAIN_RTC_FAST_MEM, ESP_PD_OPTION_OFF);
+
+    // 4) Ensure no wake sources are set
+#ifdef ESP_SLEEP_WAKEUP_ALL
+    esp_sleep_disable_wakeup_source(ESP_SLEEP_WAKEUP_ALL);
+#endif
+    // (If your code never enabled any wakeups, this is effectively already true.)
+
+    // Optional: give logs a moment to flush
+    vTaskDelay(pdMS_TO_TICKS(100));
+
+    // 5) Sleep forever (only EN/reset or power cycle will wake)
+    esp_deep_sleep_start();
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 #define COPY_STRING(dest, src)                                                 \
@@ -346,6 +420,10 @@ void app_main(void) {
 
   // Keep main alive but yield CPU — do not busy-loop
   while (1) {
+
+    if (strcmp(ActiveStatus.Cycle, "fini") == 0) {
+      enter_ship_mode_forever();
+    }
     vTaskDelay(pdMS_TO_TICKS(10000));
   }
 }
