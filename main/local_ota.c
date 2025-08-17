@@ -187,8 +187,7 @@ static void _get_ota_task(void *param) {
     esp_err_t ret = esp_https_ota(&ota_cfg);
 
     if (ret == ESP_OK) {
-        setCharArray(ActiveStatus.FirmwareStatus,"Pending Reboot");
-        
+        setCharArray(ActiveStatus.FirmwareStatus,"Pending Reboot");        
         // 10 minutes
         vTaskDelay(pdMS_TO_TICKS(1 * MIN*SEC));
         _LOG_I("Rebooting now after OTA delay.");

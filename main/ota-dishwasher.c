@@ -147,7 +147,7 @@ static void _init_setup(void) {
   if (strcasecmp(ActiveStatus.Program, "Updating") == 0) {
     while (1) {
       vTaskDelay(pdMS_TO_TICKS(30*SEC));
-      _LOG_I("Waiting for OTA Update to reboot");
+      _LOG_I("Waiting for OTA Update to reboot %s",ActiveStatus.FirmwareStatus);
     }
   }
 
