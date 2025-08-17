@@ -303,7 +303,9 @@ typedef struct {
   char Step[10];
   char statusstring[512]; // OPTIMIZATION: Fixed size buffer
   char IPAddress[16];     // OPTIMIZATION: Fixed size for IP
+  char FirmwareStatus[20];
   char Program[10];
   bool HEAT_REQUESTED;
+
 } status_struct;
 #endif

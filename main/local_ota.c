@@ -105,6 +105,7 @@ void check_and_perform_ota(void) {
 
     // Accept ANY string starting with "OK - "
     if (strncasecmp(response, "OK - ", 5) == 0) {
+        setCharArray(ActiveStatus.FirmwareStatus,"Up To Date");
         _LOG_I("Firmware is up-to-date");
         free(response);
         return;
@@ -127,6 +128,7 @@ void check_and_perform_ota(void) {
         _get_ota(url_copy); // spawns task and takes ownership of url_copy
         return;
     }
+    setCharArray(ActiveStatus.FirmwareStatus,"Server Error");
 
     _LOG_W("Unexpected response from server: %s", response);
     free(response);
@@ -180,14 +182,15 @@ static void _get_ota_task(void *param) {
     esp_https_ota_config_t ota_cfg = {
         .http_config = &http_cfg,
     };
-
+    setCharArray(ActiveStatus.FirmwareStatus,"Starting Update");
     _LOG_I("Starting OTA update from %s ...", url);
     esp_err_t ret = esp_https_ota(&ota_cfg);
 
     if (ret == ESP_OK) {
-        _LOG_I("OTA update successful. Waiting 10 minutes for log review, then rebooting...");
+        setCharArray(ActiveStatus.FirmwareStatus,"Pending Reboot");
+        
         // 10 minutes
-        vTaskDelay(pdMS_TO_TICKS(10 * 60 * 1000));
+        vTaskDelay(pdMS_TO_TICKS(1 * 60 * 1000));
         _LOG_I("Rebooting now after OTA delay.");
         free(url);
         s_ota_task = NULL;
