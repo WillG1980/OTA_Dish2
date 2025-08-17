@@ -341,8 +341,9 @@ void init_status(void) {
 void app_main(void) {
 
 
-  esp_log_level_set("*", ESP_LOG_INFO);
+    esp_log_level_set("*", ESP_LOG_INFO);
     esp_log_level_set("wifi", ESP_LOG_WARN);
+    esp_log_level_set("wifi*", ESP_LOG_WARN);
     esp_log_level_set("phy", ESP_LOG_WARN);
     
 
