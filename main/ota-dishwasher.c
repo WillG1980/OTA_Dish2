@@ -422,6 +422,7 @@ void app_main(void) {
   while (1) {
 
     if (strcmp(ActiveStatus.Cycle, "fini") == 0) {
+      log_uptime_hms();
       enter_ship_mode_forever();
     }
     vTaskDelay(pdMS_TO_TICKS(10000));

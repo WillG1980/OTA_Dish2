@@ -40,6 +40,27 @@
 #include "soc/gpio_reg.h"
 #include "soc/gpio_struct.h"
 #include "esp_attr.h"
+#include "esp_timer.h"   // esp_timer_get_time()
+#include "esp_log.h"     // if you prefer ESP_LOGI instead of _LOG_I
+
+
+#define _LOG_I(fmt, ...)   ESP_LOGI(TAG, "[Ver:%s Func:%s:%d]= " fmt, APP_VERSION, __func__, __LINE__, ##__VA_ARGS__)
+#define _LOG_W(fmt, ...)   ESP_LOGW(TAG, "[Ver:%s Func:%s:%d]= " fmt, APP_VERSION, __func__, __LINE__, ##__VA_ARGS__)
+#define _LOG_E(fmt, ...)   ESP_LOGE(TAG, "[Ver:%s Func:%s:%d]= " fmt, APP_VERSION, __func__, __LINE__, ##__VA_ARGS__)
+#define _LOG_D(fmt, ...)   ESP_LOGD(TAG, "[Ver:%s Func:%s:%d]= " fmt, APP_VERSION, __func__, __LINE__, ##__VA_ARGS__)
+
+
+static inline void log_uptime_hms(void) {
+    int64_t us = esp_timer_get_time();          // microseconds since boot
+    int64_t s  = us / 1000000LL;
+
+    int64_t h  = s / 3600;
+    int      m = (int)((s % 3600) / 60);
+    int      t = (int)(s % 60);
+
+    _LOG_I("Uptime: %lld:%02d:%02d", (long long)h, m, t);
+    // Or: ESP_LOGI("UPTIME", "Uptime: %lld:%02d:%02d", (long long)h, m, t);
+}
 
 // Configure all bits in mask as outputs (call once at init)
 static inline void gpio_mask_config_outputs(uint64_t mask) {
@@ -94,10 +115,6 @@ static inline void IRAM_ATTR gpio_mask_toggle(uint64_t mask) {
 
 
 
-#define _LOG_I(fmt, ...)   ESP_LOGI(TAG, "[Ver:%s Func:%s:%d]= " fmt, APP_VERSION, __func__, __LINE__, ##__VA_ARGS__)
-#define _LOG_W(fmt, ...)   ESP_LOGW(TAG, "[Ver:%s Func:%s:%d]= " fmt, APP_VERSION, __func__, __LINE__, ##__VA_ARGS__)
-#define _LOG_E(fmt, ...)   ESP_LOGE(TAG, "[Ver:%s Func:%s:%d]= " fmt, APP_VERSION, __func__, __LINE__, ##__VA_ARGS__)
-#define _LOG_D(fmt, ...)   ESP_LOGD(TAG, "[Ver:%s Func:%s:%d]= " fmt, APP_VERSION, __func__, __LINE__, ##__VA_ARGS__)
 
 #ifndef BIT64
 #define BIT64(n) (1ULL << (n))
