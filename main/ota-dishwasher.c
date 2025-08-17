@@ -9,7 +9,6 @@
 #define APP_VERSION VERSION
 #endif
 
-#include "driver/gpio.h"
 #include "dishwasher_programs.h" // For BASE_URL and VERSION
 #include "driver/gpio.h"
 #include "esp_crt_bundle.h"
@@ -32,69 +31,42 @@
 #include <stdlib.h>
 #include <string.h>
 
+
 // #include "analog.h"
 #include "dishwasher_programs.h"
 
 #include "buttons.h"
+#include "driver/gpio.h"
+#include "esp_sleep.h"
+#include "esp_wifi.h"
 #include "local_ota.h"
 #include "local_time.h"
 #include "local_wifi.h"
 #include "logger.h"
-#include "esp_sleep.h"
-#include "esp_wifi.h"
-#include "driver/gpio.h"
-
 
 static void enter_ship_mode_forever(void) {
-    // Stop radios/subsystems (ignore errors if not started)
-    esp_wifi_stop();
+  // Stop radios/subsystems (ignore errors if not started)
+  esp_wifi_stop();
 #if CONFIG_BT_ENABLED
-    esp_bt_controller_disable();
+  esp_bt_controller_disable();
 #endif
 
-    // Put your pins in safe states here (example only)
-    // gpio_set_direction(GPIO_NUM_27, GPIO_MODE_OUTPUT);
-    // gpio_set_level(GPIO_NUM_27, 0);
-    // gpio_hold_en(GPIO_NUM_27);           // if you need levels held in deep sleep
-    // gpio_deep_sleep_hold_en();           // enable holds across deep sleep
+  // Put your pins in safe states here (example only)
+  // gpio_set_direction(GPIO_NUM_27, GPIO_MODE_OUTPUT);
+  // gpio_set_level(GPIO_NUM_27, 0);
+  // gpio_hold_en(GPIO_NUM_27);           // if you need levels held in deep
+  // sleep gpio_deep_sleep_hold_en();           // enable holds across deep
+  // sleep
 
-    // Make sure you haven't enabled any wakeups
+  // Make sure you haven't enabled any wakeups
 #if defined(ESP_SLEEP_WAKEUP_ALL)
-    esp_sleep_disable_wakeup_source(ESP_SLEEP_WAKEUP_ALL);
+  esp_sleep_disable_wakeup_source(ESP_SLEEP_WAKEUP_ALL);
 #endif
-    // (If you enabled specific wakeups earlier, disable them explicitly)
+  // (If you enabled specific wakeups earlier, disable them explicitly)
 
-    vTaskDelay(pdMS_TO_TICKS(100));        // let logs flush a moment
-    esp_deep_sleep_start();                 // won’t return; only EN/power-cycle wakes it
+  vTaskDelay(pdMS_TO_TICKS(100)); // let logs flush a moment
+  esp_deep_sleep_start();         // won’t return; only EN/power-cycle wakes it
 }
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 #define COPY_STRING(dest, src)                                                 \
   do {                                                                         \
@@ -122,7 +94,6 @@ void prepare_programs(void) {
   bool found = false;
   long long min_time = 0;
   long long max_time = 0;
-  
 
   for (int i = 0; i < NUM_PROGRAMS; i++) {
     current = Programs[i];
@@ -134,32 +105,28 @@ void prepare_programs(void) {
       max_time +=
           (long long)((Line->max_time > 0) ? Line->max_time : Line->min_time);
 
-          _LOG_I("%s->%s\t->%s\t = Min TTR:%4" PRIu32 "  Max TTR:%4" PRIu32
-       "  Min Temp:%3d  Max Temp:%3d  GPIO:%" PRIu64,
-       SAFE_STR(Programs[i].name),
-       SAFE_STR(Line->name_cycle),
-       SAFE_STR(Line->name_step),
-       (uint32_t)Line->min_time,
-       (uint32_t)Line->max_time
-       ,
-       (int)Line->min_temp,
-       (int)Line->max_temp,
-       (uint64_t)Line->gpio_mask);
+      _LOG_I("%s->%s\t->%s\t = Min TTR:%4" PRIu32 "  Max TTR:%4" PRIu32
+             "  Min Temp:%3d  Max Temp:%3d  GPIO:%" PRIu64,
+             SAFE_STR(Programs[i].name), SAFE_STR(Line->name_cycle),
+             SAFE_STR(Line->name_step), (uint32_t)Line->min_time,
+             (uint32_t)Line->max_time, (int)Line->min_temp, (int)Line->max_temp,
+             (uint64_t)Line->gpio_mask);
 
-      /* _LOG_I("%s->%s\t->%s\t = Min TTR: %4.0lld Max TTR: %4.0lld Min Temp %3d Max Temp %3d GPIO:%lld",
-             Programs[i].name, Line->name_cycle, Line->name_step, Line->min_time, Line->max_time, Line->min_temp, Line->max_temp, Line->gpio_mask);
+      /* _LOG_I("%s->%s\t->%s\t = Min TTR: %4.0lld Max TTR: %4.0lld Min Temp %3d
+         Max Temp %3d GPIO:%lld", Programs[i].name, Line->name_cycle,
+         Line->name_step, Line->min_time, Line->max_time, Line->min_temp,
+         Line->max_temp, Line->gpio_mask);
              */
     }
 
-    Programs[i].min_time=min_time;
-    Programs[i].max_time=max_time;
+    Programs[i].min_time = min_time;
+    Programs[i].max_time = max_time;
 
-    printf("\nTotal run time for program '%s': Min: %lld Minutes, Max: %lld Minutes\n",
-           current.name, (long long)min_time/MIN, (long long)max_time/MIN);
-
+    printf("\nTotal run time for program '%s': Min: %lld Minutes, Max: %lld "
+           "Minutes\n",
+           current.name, (long long)min_time / MIN, (long long)max_time / MIN);
   }
 }
-
 
 static void _init_setup(void) {
   // initialize subsystems (these functions should be provided by their
@@ -176,14 +143,12 @@ static void _init_setup(void) {
     counter--;
   }
   check_and_perform_ota();
-  if(strcasecmp(ActiveStatus.Program,"Updating")==0){
-    while(1){
+  if (strcasecmp(ActiveStatus.Program, "Updating") == 0) {
+    while (1) {
       vTaskDelay(pdMS_TO_TICKS(1000));
       _LOG_I("Waiting for OTA Update to reboot");
-
     }
   }
-
 
   initialize_sntp_blocking();
   init_switchesandleds();
@@ -193,7 +158,7 @@ static void _init_setup(void) {
   print_status();
   prepare_programs();
 
-//  vTaskDelay(pdMS_TO_TICKS(1000000));
+  //  vTaskDelay(pdMS_TO_TICKS(1000000));
 
   // create background monitoring tasks (use reasonable stack sizes)
   _LOG_I("Queueinga new task");
@@ -275,19 +240,17 @@ static void update_published_status(void *pvParameters) {
   _LOG_I("Finishing");
 } // run_program task: summarises and then blocks
 
-
-
 static void run_program(void *pvParameters) {
   (void)pvParameters;
   gpio_mask_config_outputs(ALL_ACTORS);
 
-/* // Group mask    uint64_t mask = HEAT | SPRAY | INLET | DRAIN | SOAP;
-    // Turn them all ON (HIGH)    gpio_port_set_mask(GPIO_PORT_0, mask);
-    // Turn them all OFF (LOW)    gpio_port_clear_mask(GPIO_PORT_0, mask);
-    // Toggle them    gpio_port_toggle_mask(GPIO_PORT_0, mask);
-}*/
+  /* // Group mask    uint64_t mask = HEAT | SPRAY | INLET | DRAIN | SOAP;
+      // Turn them all ON (HIGH)    gpio_port_set_mask(GPIO_PORT_0, mask);
+      // Turn them all OFF (LOW)    gpio_port_clear_mask(GPIO_PORT_0, mask);
+      // Toggle them    gpio_port_toggle_mask(GPIO_PORT_0, mask);
+  }*/
 
-char *old_cycle = "";
+  char *old_cycle = "";
   Program_Entry chosen = {0};
   bool found = false;
 
@@ -310,15 +273,12 @@ char *old_cycle = "";
   ActiveStatus.time_full_start = get_unix_epoch();
   //    ActiveStatus.time_full_total = get_unix_epoch() + max_time;
 
-
-    _LOG_I("Activating all pins");
-    gpio_mask_set( HEAT | SPRAY | INLET | DRAIN | SOAP ); // set all pins to off
-    vTaskDelay(pdMS_TO_TICKS(3000));
-    _LOG_I("DE-Activating all pins");
-      gpio_mask_clear( HEAT | SPRAY | INLET | DRAIN | SOAP ); // set all pins to off
-    vTaskDelay(pdMS_TO_TICKS(3000));
-    
-
+  _LOG_I("Activating all pins");
+  gpio_mask_set(HEAT | SPRAY | INLET | DRAIN | SOAP); // set all pins to off
+  vTaskDelay(pdMS_TO_TICKS(3000));
+  _LOG_I("DE-Activating all pins");
+  gpio_mask_clear(HEAT | SPRAY | INLET | DRAIN | SOAP); // set all pins to off
+  vTaskDelay(pdMS_TO_TICKS(3000));
 
   for (size_t l = 0; l < chosen.num_lines; l++) {
     ProgramLineStruct *Line = &chosen.lines[l];
@@ -327,27 +287,29 @@ char *old_cycle = "";
       printf("\n-- new cycle: %s --\n", Line->name_cycle);
     }
     old_cycle = Line->name_cycle;
-    int TTR=(Line->max_time>Line->min_time)?Line->max_time:Line->min_time;
+    int TTR =
+        (Line->max_time > Line->min_time) ? Line->max_time : Line->min_time;
 
-    time_t target_time = get_unix_epoch() + TTR*MIN*SEC;
+    time_t target_time = get_unix_epoch() + TTR * MIN * SEC;
     COPY_STRING(ActiveStatus.Cycle, Line->name_cycle);
     COPY_STRING(ActiveStatus.Step, Line->name_step);
-    
-    printf("\n%s:%s->%s: Eta %s GPIO-mask %lld\n", ActiveStatus.Program, Line->name_cycle, Line->name_step, get_us_time_string(target_time),Line->gpio_mask);
-    
-    print_masked_bits(Line->gpio_mask,ALL_ACTORS);
 
+    _LOG_I("\n%s:%s->%s: Eta %s GPIO-mask %lld\n", ActiveStatus.Program,
+           Line->name_cycle, Line->name_step, get_us_time_string(target_time),
+           return_masked_bits(Line->gpio_mask, ALL_ACTORS));
 
-    vTaskDelay(pdMS_TO_TICKS(5*SEC));       // run for 5 seconds minimum
+    vTaskDelay(pdMS_TO_TICKS(5 * SEC)); // run for 5 seconds minimum
 
     while (target_time < get_unix_epoch()) { // until MAX time reached
 
-      gpio_mask_set( Line->gpio_mask ); // set all pins to off
-          _LOG_I("Time to run: %d minute -- %s - %s",Line->min_time,get_us_time_string(target_time),get_us_time_string(get_unix_epoch()));
+      gpio_mask_set(Line->gpio_mask); // set all pins to off
+      _LOG_I("Time to run: %d minute -- %s - %s", Line->min_time,
+             get_us_time_string(target_time),
+             get_us_time_string(get_unix_epoch()));
 
-          vTaskDelay(pdMS_TO_TICKS(5*SEC));       // Do_runTime
-          }
-     }
+      vTaskDelay(pdMS_TO_TICKS(5 * SEC)); // Do_runTime
+    }
+  }
 
   // TODO: implement actual runtime control of GPIOs, temps, timing, etc.
   // For now block forever (or you could vTaskDelete(NULL) to end the task)
@@ -374,7 +336,6 @@ void init_status(void) {
   _LOG_I("Ending Function");
 }
 // app_main
-
 
 void app_main(void) {
   printf("Version: %s\n", APP_VERSION);

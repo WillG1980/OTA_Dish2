@@ -263,7 +263,20 @@ static Program_Entry Programs[NUM_PROGRAMS] = {
   } while (0)
 
 // Print bits from "value" according to which positions are flagged in "mask"
+static inline const char* return_masked_bits(uint64_t value, uint64_t mask) {
+    static char s[65];
+    size_t i = 0;
 
+    for (int bit = 63; bit >= 0; --bit) {
+        if (mask & (1ULL << bit)) {
+            if (i < 64) {
+                s[i++] = (char)('0' + (int)((value >> bit) & 1ULL));
+            }
+        }
+    }
+    s[i] = '\0';
+    return s;
+}
 static inline void print_masked_bits(uint64_t value, uint64_t mask) {
     for (int bit = 63; bit >= 0; bit--) {
         if (mask & (1ULL << bit)) {
