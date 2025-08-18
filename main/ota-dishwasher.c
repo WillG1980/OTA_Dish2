@@ -42,7 +42,6 @@
 #include "local_wifi.h"
 #include "logger.h"
 
-
 static void enter_ship_mode_forever(void) {
   // Stop radios/subsystems (ignore errors if not started)
   esp_wifi_stop();
@@ -147,9 +146,9 @@ static void _init_setup(void) {
 
   check_and_perform_ota();
   while (strcasecmp(ActiveStatus.Program, "Updating") == 0) {
-      vTaskDelay(pdMS_TO_TICKS(30*SEC));
+    vTaskDelay(pdMS_TO_TICKS(30 * SEC));
   }
-    initialize_sntp_blocking();
+  initialize_sntp_blocking();
   init_switchesandleds();
   logger_init("10.0.0.123", 5000, 4096);
   logger_flush();
@@ -357,7 +356,6 @@ void app_main(void) {
   // choose program and start program task
   setCharArray(ActiveStatus.Program, "Tester");
   _LOG_I("Queueing a new wash task task");
-
 
   xTaskCreate(run_program, "Run_Program", 8192, NULL, 5, NULL);
 

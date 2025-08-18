@@ -20,7 +20,8 @@ set(PROJECT_NAME_STR "ota-dishwasher")
 # Pass to compiler
 add_compile_definitions(
   OTA_VERSION="${APP_VERSION}"
-  VERSION="${SPP_VERSION}"
+  VERSION="${APP_VERSION}"
+  APP_VERSION="${APP_VERSION}"
   PROJECT_NAME="${PROJECT_NAME_STR}"
  # TAG="Dishwasher"
   WIFI_SSID_REAL="House619"
