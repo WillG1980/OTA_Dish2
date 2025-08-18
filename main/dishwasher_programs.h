@@ -294,8 +294,8 @@ static inline void delay_monitor(int64_t millis,int64_t time_between_beats){
     for(;millis>time_between_beats;millis=-time_between_beats){
         counter++;
         if (  counter % 10  ){printf("\n");}
-        wait=(millis<time_between_beats)?time_between_beats:millis;
-        printf(". %d \t-- %lld ",wait,millis );
+        wait=(millis>time_between_beats)?time_between_beats:millis;
+        printf(". %d \t-- %lld -- %lld ",wait,millis,time_between_beats );
         
         vTaskDelay(pdMS_TO_TICKS(wait));
     }
