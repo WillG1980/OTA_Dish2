@@ -83,7 +83,14 @@ static void run_program(void *pvParameters);
 static void _init_setup(void);
 static void init_status();
 void print_status();
-
+static void net_probe(const char* ip, uint16_t port) {
+    int s = socket(AF_INET, SOCK_DGRAM, IPPROTO_UDP);
+    struct sockaddr_in to = {.sin_family=AF_INET, .sin_port=htons(port)};
+    inet_aton(ip, &to.sin_addr);
+    const char *msg = "ESP UDP probe\n";
+    sendto(s, msg, strlen(msg), 0, (struct sockaddr*)&to, sizeof(to));
+    close(s);
+}
 // ----- implementations -----
 void prepare_programs(void) {
 
@@ -150,7 +157,8 @@ static void _init_setup(void) {
   }
   initialize_sntp_blocking();
   init_switchesandleds();
-  logger_init("10.0.0.123", 5000, 4096);
+  logger_init("10.0.0.123", 5514, 4096);
+  net_probe("10.0.0.123",5514);
   logger_flush();
   init_status();
   print_status();
