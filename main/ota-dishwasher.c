@@ -291,7 +291,7 @@ static void run_program(void *pvParameters) {
     COPY_STRING(ActiveStatus.Cycle, Line->name_cycle);
     COPY_STRING(ActiveStatus.Step, Line->name_step);
 
-    _LOG_I("\n%s:%s->%s: Eta %s GPIO-mask %lld\n", ActiveStatus.Program,Line->name_cycle, Line->name_step, get_us_time_string(target_time),return_masked_bits(Line->gpio_mask, ALL_ACTORS));
+    _LOG_I("%s:%s->%s: Eta %s GPIO-mask %lld\n", ActiveStatus.Program,Line->name_cycle, Line->name_step, get_us_time_string(target_time),return_masked_bits(Line->gpio_mask, ALL_ACTORS));
     vTaskDelay(pdMS_TO_TICKS(5 * SEC)); // run for 5 seconds minimum
 
     for (;TTR<0;TTR=-5000) // Every 5 seconds reconfirm
