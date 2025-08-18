@@ -150,12 +150,14 @@ static void _init_setup(void) {
 
   check_and_perform_ota();
   if (strcasecmp(ActiveStatus.Program, "Updating") == 0) {
-    int timer=10*SEC;
+    int timer=30*SEC;
+    int counter=0;
     while (1) {
       _LOG_I("Waiting (%d) for OTA Update to reboot %s",timer,ActiveStatus.FirmwareStatus);
       vTaskDelay(pdMS_TO_TICKS(timer));
       if(strcasecmp(ActiveStatus.FirmwareStatus,"Pending Reboot")==0){
-        esp_restart();
+        counter++;
+        if(counter>3){        esp_restart();}
       }            
     }
   }
