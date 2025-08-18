@@ -26,8 +26,8 @@ static inline void boot_partition_string(char *out, size_t out_sz) {
 
     char typebuf[16];
     const char *kind = app_subtype_str(boot->subtype, typebuf, sizeof(typebuf));
-    const char *label = (boot->label && boot->label[0]) ? boot->label : "(no-label)";
-
+    const char *label = (boot->label[0] != '\0') ? boot->label : "(no-label)";
+    
     // address is 32-bit on ESP32; cast to unsigned to satisfy printf
     snprintf(out, out_sz, "boot=%s (label='%s', addr=0x%08x, size=%u)",
              kind, label, (unsigned)boot->address, (unsigned)boot->size);
@@ -43,7 +43,9 @@ static inline void running_partition_string(char *out, size_t out_sz) {
 
     char typebuf[16];
     const char *kind = app_subtype_str(boot->subtype, typebuf, sizeof(typebuf));
-    const char *label = (boot->label && boot->label[0]) ? boot->label : "(no-label)";
+    
+    const char *label = (boot->label[0] != '\0') ? boot->label : "(no-label)";
+    
 
     // address is 32-bit on ESP32; cast to unsigned to satisfy printf
     snprintf(out, out_sz, "boot=%s (label='%s', addr=0x%08x, size=%u)",

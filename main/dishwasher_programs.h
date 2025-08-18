@@ -288,13 +288,16 @@ static inline void print_masked_bits(uint64_t value, uint64_t mask) {
 static inline void delay_monitor(int64_t millis,int64_t time_between_beats){
     int counter=(millis+time_between_beats-1)/time_between_beats;
     int loops=0;
+    int wait=0;
     _LOG_I("Counter Loops: %d",counter);    
     
     for(;millis>time_between_beats;millis=-time_between_beats){
         counter++;
         if (  counter % 10  ){printf("\n");}
-        printf(".");
-        vTaskDelay(pdMS_TO_TICKS((millis<time_between_beats)?time_between_beats:millis));
+        wait=(millis<time_between_beats)?time_between_beats:millis;
+        printf(". %d \t-- %lld ",wait,millis );
+        
+        vTaskDelay(pdMS_TO_TICKS(wait));
     }
 
 

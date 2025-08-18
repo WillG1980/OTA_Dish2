@@ -40,6 +40,7 @@
 #include "local_time.h"
 #include "local_wifi.h"
 #include "logger.h"
+#include "local_partitions.h"
 
 static void enter_ship_mode_forever(void) {
   // Stop radios/subsystems (ignore errors if not started)
@@ -348,7 +349,8 @@ void init_status(void) {
 // app_main
 
 void app_main(void) {
-
+    _LOG_I("Booting partition: %s", boot_partition_cstr());
+    _LOG_I("Running partition: %s", running_partition_cstr());
 
     esp_log_level_set("*", ESP_LOG_INFO);
     esp_log_level_set("wifi", ESP_LOG_WARN);
