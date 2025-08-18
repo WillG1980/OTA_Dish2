@@ -283,7 +283,7 @@ static void run_program(void *pvParameters) {
       printf("\n-- new cycle: %s --\n", Line->name_cycle);
     }
     */
-    
+    gpio_mask_clear(HEAT | SPRAY | INLET | DRAIN | SOAP); // set all pins to off
     old_cycle = Line->name_cycle;
     int TTR =  (Line->max_time > Line->min_time) ? Line->max_time : Line->min_time;
 
