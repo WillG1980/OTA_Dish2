@@ -14,22 +14,13 @@ execute_process(
 
 math(EXPR APP_VERSION "${GIT_TAG} + 1")
 
-#set(APP_VERSION "${PENDING_VERSION}")
-#if(APP_VERSION LESS 10)
-    #set(APP_VERSION "000${PENDING_VERSION}")
-#elseif(APP_VERSION LESS 100)
-    #set(APP_VERSION "00${PENDING_VERSION}")
-#elseif(APP_VERSION LESS 1000)
-    #set(APP_VERSION "0${PENDING_VERSION}")
-#endif()
-
 # Set project name
 set(PROJECT_NAME_STR "ota-dishwasher")
 
 # Pass to compiler
 add_compile_definitions(
   OTA_VERSION="${APP_VERSION}"
-  VERSION="${GIT_TAG}"
+  VERSION="${SPP_VERSION}"
   PROJECT_NAME="${PROJECT_NAME_STR}"
  # TAG="Dishwasher"
   WIFI_SSID_REAL="House619"
