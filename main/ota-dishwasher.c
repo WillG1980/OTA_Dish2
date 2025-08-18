@@ -234,7 +234,7 @@ static void update_published_status(void *pvParameters) {
                ActiveStatus.Cycle);
       };
     } else {
-      _LOG_I("Cycle-Processing");
+   //   _LOG_I("Cycle-Processing");
       print_status();
       vTaskDelay(pdMS_TO_TICKS(30000));
     }
