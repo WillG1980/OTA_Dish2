@@ -349,8 +349,9 @@ void init_status(void) {
 // app_main
 
 void app_main(void) {
-    _LOG_I("Booting partition: %s", boot_partition_cstr());
-    _LOG_I("Running partition: %s", running_partition_cstr());
+    _LOG_I("Booting: %s", boot_partition_cstr());
+    _LOG_I("Running: %s", running_partition_cstr());
+    _LOG_I("Version: %s", APP_VERSION);
 
     esp_log_level_set("*", ESP_LOG_INFO);
     esp_log_level_set("wifi", ESP_LOG_WARN);

@@ -13,9 +13,8 @@
 #include <strings.h>   // for strncasecmp
 #include <stdlib.h>
 #include <arpa/inet.h>
-
 #include "local_wifi.h"
-
+#include "local_partitions.h"
 #ifndef TAG
 #define TAG PROJECT_NAME
 #endif
@@ -189,14 +188,17 @@ static void _get_ota_task(void *param) {
     _LOG_I("Flash finished");
     if (ret == ESP_OK) {
         setCharArray(ActiveStatus.FirmwareStatus,"Pending Reboot");        
-        // 1 minutes
-        _LOG_I("Rebooting in 1 minute");
-        delay_monitor(60000,5000);
-        vTaskDelay(pdMS_TO_TICKS(1 * MIN));
-        _LOG_I("Rebooting now after OTA delay.");
+
         free(url);
         s_ota_task = NULL;
-        esp_restart(); // never returns
+            // 1 minutes
+        _LOG_I("Rebooting in 1 minute");
+        delay_monitor(60000,5000);
+        _LOG_I("Booting: %s", boot_partition_cstr());
+        _LOG_I("Running: %s", running_partition_cstr());
+        _LOG_I("Version: %s", APP_VERSION);
+
+    esp_restart(); // never returns
     } else {
         setCharArray(ActiveStatus.FirmwareStatus,"Firmware Failed");        
         _LOG_E("OTA update failed: %s", esp_err_to_name(ret));
