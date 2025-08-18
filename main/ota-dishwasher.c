@@ -87,6 +87,7 @@ void print_status();
 
 
 
+
 // ----- implementations -----
 void prepare_programs(void) {
 
@@ -133,23 +134,29 @@ static void _init_setup(void) {
   // initialize subsystems (these functions should be provided by their
   // modules)
   local_wifi_init_and_connect();
+
+  logger_init("10.0.0.123", 5000, 4096);
+  logger_flush();
+
   int counter = 60;
   while (counter > 0) {
-    _LOG_I(TAG, "waiting on wifi... %d remaining, status %d", counter,
-           is_connected());
+    _LOG_I(TAG, "waiting on wifi... %d remaining, status %d", counter,is_connected());
     vTaskDelay(pdMS_TO_TICKS(1000));
     if (is_connected()) {
       counter = -1;
     }
     counter--;
   }
+
   check_and_perform_ota();
   if (strcasecmp(ActiveStatus.Program, "Updating") == 0) {
-    int timer=1*MIN;
+    int timer=10*SEC;
     while (1) {
       _LOG_I("Waiting (%d) for OTA Update to reboot %s",timer,ActiveStatus.FirmwareStatus);
       vTaskDelay(pdMS_TO_TICKS(timer));
-      
+      if(strcasecmp(ActiveStatus.FirmwareStatus,"Pending Reboot")==0){
+        esp_restart();
+      }            
     }
   }
 
@@ -160,7 +167,6 @@ static void _init_setup(void) {
   init_status();
   print_status();
   prepare_programs();
-
   //  vTaskDelay(pdMS_TO_TICKS(1000000));
 
   // create background monitoring tasks (use reasonable stack sizes)
