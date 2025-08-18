@@ -294,6 +294,14 @@ static void run_program(void *pvParameters) {
     _LOG_I("\n%s:%s->%s: Eta %s GPIO-mask %lld\n", ActiveStatus.Program,Line->name_cycle, Line->name_step, get_us_time_string(target_time),return_masked_bits(Line->gpio_mask, ALL_ACTORS));
     vTaskDelay(pdMS_TO_TICKS(5 * SEC)); // run for 5 seconds minimum
 
+    for (;TTR>0;TTR=-5000) // Every 5 seconds reconfirm
+        {
+          gpio_mask_set(Line->gpio_mask); // set all pins to off
+          _LOG_I("\t\t%s:%s\t%d",Line->name_cycle,Line->name_step,TTR);
+        }
+    
+    
+    /*
     while (target_time < get_unix_epoch()) { // until MAX time reached
       gpio_mask_set(Line->gpio_mask); // set all pins to off
       _LOG_I("Time to run: %d minute -- %s - %s", Line->min_time,
@@ -302,6 +310,7 @@ static void run_program(void *pvParameters) {
 
       vTaskDelay(pdMS_TO_TICKS(5 * SEC)); // Do_runTime
     }
+      */
   }
 
   // TODO: implement actual runtime control of GPIOs, temps, timing, etc.
