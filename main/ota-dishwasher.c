@@ -268,8 +268,9 @@ static void run_program(void *pvParameters) {
   //    ActiveStatus.time_full_total = get_unix_epoch() + max_time;
 
   _LOG_I("Activating all pins");
-  gpio_mask_set(HEAT | SPRAY | INLET | DRAIN | SOAP); // set all pins to off
+  gpio_mask_set(HEAT | SPRAY | INLET | DRAIN ); // set all pins to on for breif test (except SOAP)
   vTaskDelay(pdMS_TO_TICKS(3000));
+  
   _LOG_I("DE-Activating all pins");
   gpio_mask_clear(HEAT | SPRAY | INLET | DRAIN | SOAP); // set all pins to off
   vTaskDelay(pdMS_TO_TICKS(3000));
@@ -277,25 +278,23 @@ static void run_program(void *pvParameters) {
   for (size_t l = 0; l < chosen.num_lines; l++) {
     ProgramLineStruct *Line = &chosen.lines[l];
 
+    /*
     if (strcmp(old_cycle, Line->name_cycle) != 0) {
       printf("\n-- new cycle: %s --\n", Line->name_cycle);
     }
+    */
+    
     old_cycle = Line->name_cycle;
-    int TTR =
-        (Line->max_time > Line->min_time) ? Line->max_time : Line->min_time;
+    int TTR =  (Line->max_time > Line->min_time) ? Line->max_time : Line->min_time;
 
-    time_t target_time = get_unix_epoch() + TTR * MIN;
+    time_t target_time = get_unix_epoch() + TTR ;
     COPY_STRING(ActiveStatus.Cycle, Line->name_cycle);
     COPY_STRING(ActiveStatus.Step, Line->name_step);
 
-    _LOG_I("\n%s:%s->%s: Eta %s GPIO-mask %lld\n", ActiveStatus.Program,
-           Line->name_cycle, Line->name_step, get_us_time_string(target_time),
-           return_masked_bits(Line->gpio_mask, ALL_ACTORS));
-
+    _LOG_I("\n%s:%s->%s: Eta %s GPIO-mask %lld\n", ActiveStatus.Program,Line->name_cycle, Line->name_step, get_us_time_string(target_time),return_masked_bits(Line->gpio_mask, ALL_ACTORS));
     vTaskDelay(pdMS_TO_TICKS(5 * SEC)); // run for 5 seconds minimum
 
     while (target_time < get_unix_epoch()) { // until MAX time reached
-
       gpio_mask_set(Line->gpio_mask); // set all pins to off
       _LOG_I("Time to run: %d minute -- %s - %s", Line->min_time,
              get_us_time_string(target_time),
