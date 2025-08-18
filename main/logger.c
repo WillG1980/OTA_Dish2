@@ -33,9 +33,6 @@
 #include "lwip/inet.h"
 #include "lwip/netdb.h"
 #include "dishwasher_programs.h"
-
-
-
 // ---- Internal state ----
 static char *log_buffer = NULL;
 static size_t buffer_size = 0;
@@ -198,8 +195,7 @@ static int tcp_logger_vprintf(const char *fmt, va_list args) {
 }
 
 // ---- Event handling ----
-static void net_event_handler(void* arg, esp_event_base_t event_base,
-                              int32_t event_id, void* event_data) {
+static void net_event_handler(void* arg, esp_event_base_t event_base,int32_t event_id, void* event_data) {
     _LOG_D("Start of function");
     (void)arg; (void)event_data;
     if (event_base == IP_EVENT) {

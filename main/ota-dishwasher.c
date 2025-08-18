@@ -134,7 +134,6 @@ static void _init_setup(void) {
   // initialize subsystems (these functions should be provided by their
   // modules)
   local_wifi_init_and_connect();
-
   logger_init("10.0.0.123", 5000, 4096);
   logger_flush();
 
@@ -355,6 +354,7 @@ void app_main(void) {
     esp_log_level_set("wifi", ESP_LOG_WARN);
     esp_log_level_set("wifi*", ESP_LOG_WARN);
     esp_log_level_set("phy", ESP_LOG_WARN);
+    esp_log_level_set("ota_dishwasher", ESP_LOG_VERBOSE);
     
 
   printf("Version: %s\n", APP_VERSION);
