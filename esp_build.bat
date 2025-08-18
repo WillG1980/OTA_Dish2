@@ -1,8 +1,12 @@
 @echo off
 echo get new git version
 FOR /F %%i IN ('git rev-list --count HEAD') DO SET /a VERSION=%%i+1
+
+
+
+
 echo Determined new version to be: %VERSION%, testing the build
-idf.py build
+@idf.py build
 if errorlevel 1 (
     echo Error detected, exiting, no GIT commit
     exit /b 1
@@ -12,7 +16,7 @@ git add .
 echo Commit changed files
 git diff --cached --quiet || (
     git commit -m "Auto-commit on build: %DATE% %TIME%" 
-    FOR /F %%i IN ('git rev-list --count HEAD') DO git tag -a build-%%i -m "Build tag"
+    FOR /F %%i IN ('git rev-list --count HEAD') DO git tag -a build-%VERSION% -m "Build tag"
 )
 echo Copy files to firmware update repository
 @echo on
