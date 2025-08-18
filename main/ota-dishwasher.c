@@ -347,7 +347,7 @@ void app_main(void) {
   _LOG_I("Running: %s", running_partition_cstr());
   _LOG_I("Version: %s", APP_VERSION);
 
-  esp_log_level_set("*", ESP_LOG_INFO);
+  esp_log_level_set("*", ESP_LOG_DEBUG);
   esp_log_level_set("wifi", ESP_LOG_WARN);
   esp_log_level_set("wifi*", ESP_LOG_WARN);
   esp_log_level_set("phy", ESP_LOG_WARN);
