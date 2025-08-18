@@ -188,7 +188,6 @@ static void _get_ota_task(void *param) {
     _LOG_I("Flash finished");
     if (ret == ESP_OK) {
         setCharArray(ActiveStatus.FirmwareStatus,"Pending Reboot");        
-
         free(url);
         s_ota_task = NULL;
             // 1 minutes
@@ -197,7 +196,6 @@ static void _get_ota_task(void *param) {
         _LOG_I("Booting: %s", boot_partition_cstr());
         _LOG_I("Running: %s", running_partition_cstr());
         _LOG_I("Version: %s", APP_VERSION);
-
     esp_restart(); // never returns
     } else {
         setCharArray(ActiveStatus.FirmwareStatus,"Firmware Failed");        

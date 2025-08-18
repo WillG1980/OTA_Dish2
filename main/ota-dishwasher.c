@@ -31,16 +31,17 @@
 #include <string.h>
 
 // #include "analog.h"
-#include "dishwasher_programs.h"
 #include "buttons.h"
+#include "dishwasher_programs.h"
 #include "driver/gpio.h"
 #include "esp_sleep.h"
 #include "esp_wifi.h"
 #include "local_ota.h"
+#include "local_partitions.h"
 #include "local_time.h"
 #include "local_wifi.h"
 #include "logger.h"
-#include "local_partitions.h"
+
 
 static void enter_ship_mode_forever(void) {
   // Stop radios/subsystems (ignore errors if not started)
@@ -83,11 +84,6 @@ static void run_program(void *pvParameters);
 static void _init_setup(void);
 static void init_status();
 void print_status();
-
-
-
-
-
 
 // ----- implementations -----
 void prepare_programs(void) {
@@ -140,7 +136,8 @@ static void _init_setup(void) {
 
   int counter = 60;
   while (counter > 0) {
-    _LOG_I(TAG, "waiting on wifi... %d remaining, status %d", counter,is_connected());
+    _LOG_I("waiting on wifi... %d remaining, status %d", counter,
+           is_connected());
     vTaskDelay(pdMS_TO_TICKS(1000));
     if (is_connected()) {
       counter = -1;
@@ -150,15 +147,18 @@ static void _init_setup(void) {
 
   check_and_perform_ota();
   if (strcasecmp(ActiveStatus.Program, "Updating") == 0) {
-    int timer=30*SEC;
-    int counter=0;
+    int timer = 30 * SEC;
+    int counter = 0;
     while (1) {
-      _LOG_I("Waiting (%d) for OTA Update to reboot %s",timer,ActiveStatus.FirmwareStatus);
+      _LOG_I("Waiting (%d) for OTA Update to reboot %s", timer,
+             ActiveStatus.FirmwareStatus);
       vTaskDelay(pdMS_TO_TICKS(timer));
-      if(strcasecmp(ActiveStatus.FirmwareStatus,"Pending Reboot")==0){
+      if (strcasecmp(ActiveStatus.FirmwareStatus, "Pending Reboot") == 0) {
         counter++;
-        if(counter>3){        esp_restart();}
-      }            
+        if (counter > 5) {
+          esp_restart();
+        }
+      }
     }
   }
 
@@ -349,29 +349,25 @@ void init_status(void) {
 // app_main
 
 void app_main(void) {
-    _LOG_I("Booting: %s", boot_partition_cstr());
-    _LOG_I("Running: %s", running_partition_cstr());
-    _LOG_I("Version: %s", APP_VERSION);
+  _LOG_I("Booting: %s", boot_partition_cstr());
+  _LOG_I("Running: %s", running_partition_cstr());
+  _LOG_I("Version: %s", APP_VERSION);
 
-    esp_log_level_set("*", ESP_LOG_INFO);
-    esp_log_level_set("wifi", ESP_LOG_WARN);
-    esp_log_level_set("wifi*", ESP_LOG_WARN);
-    esp_log_level_set("phy", ESP_LOG_WARN);
-    esp_log_level_set("ota_dishwasher", ESP_LOG_VERBOSE);
-    
+  esp_log_level_set("*", ESP_LOG_INFO);
+  esp_log_level_set("wifi", ESP_LOG_WARN);
+  esp_log_level_set("wifi*", ESP_LOG_WARN);
+  esp_log_level_set("phy", ESP_LOG_WARN);
+  esp_log_level_set("ota_dishwasher", ESP_LOG_VERBOSE);
 
   printf("Version: %s\n", APP_VERSION);
   ESP_ERROR_CHECK(nvs_flash_init());
   _init_setup();
-  int resp_len = 0;
-  int status = 0;
-  _http_get("https://www.google.com", &resp_len, &status);
-  _http_get("http://house.sjcnu.com", &resp_len, &status);
+
   check_and_perform_ota();
 
   printf("\n\tTotal program count: %d\n", NUM_PROGRAMS);
   for (int i = 0; i < NUM_PROGRAMS; i++) {
-    printf("Program Name: %s\n", Programs[i].name);
+    printf("\n\t\tProgram Name: %s\n", Programs[i].name);
   }
   // start wifi, monitors, etc
   // choose program and start program task
