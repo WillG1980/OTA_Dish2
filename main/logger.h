@@ -1,36 +1,23 @@
-#ifndef LOGGER_H
-#define LOGGER_H
-
+#pragma once
+#include "esp_err.h"
 #include <stdbool.h>
 #include <stdint.h>
-#include "esp_log.h"
 
 #ifdef __cplusplus
 extern "C" {
 #endif
 
-/**
- * @brief Initialize TCP logger.
- * 
- * @param host Remote server IP or hostname
- * @param port Remote TCP port
- * @param buffer_size Size of ring buffer for storing log messages
- * @return true on success, false otherwise
- */
-bool logger_init(const char *host, uint16_t port, size_t buffer_size);
+// Initialize network mirroring of ESP_LOG output.
+// You can enable UDP, TCP, or both on the same numeric port.
+esp_err_t logger_init(const char *host, uint16_t port,int buffer);
+esp_err_t logger_init_net(const char *host, uint16_t port, bool use_udp, bool use_tcp);
 
-/**
- * @brief Stop TCP logger and free resources.
- */
-void logger_stop(void);
+// Stop mirroring and restore the original vprintf.
+void logger_shutdown_net(void);
 
-/**
- * @brief Force flush of buffered logs to remote server.
- */
-void logger_flush(void);
+// Optional: query drops (messages dropped due to full queue)
+uint32_t logger_get_drop_count(void);
 
 #ifdef __cplusplus
 }
 #endif
-
-#endif // LOGGER_H

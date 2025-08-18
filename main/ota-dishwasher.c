@@ -138,7 +138,7 @@ static void _init_setup(void) {
   // modules)
   local_wifi_init_and_connect();
   logger_init("10.0.0.123", 5514, 4096);
-  logger_flush();
+  //logger_flush();
 
   int counter = 60;
   while (counter > 0) {
@@ -159,7 +159,7 @@ static void _init_setup(void) {
   init_switchesandleds();
   logger_init("10.0.0.123", 5514, 4096);
   net_probe("10.0.0.123",5514);
-  logger_flush();
+  //logger_flush();
   init_status();
   print_status();
   prepare_programs();
