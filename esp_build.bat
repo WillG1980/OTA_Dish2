@@ -19,7 +19,7 @@ git diff --cached --quiet || (
     
     FOR /F %%i IN ('git rev-list --count HEAD') DO git tag -a build-%VERSION% -m "Build tag"
 )
-git push origin main
+REM git push origin main
 echo Copy files to firmware update repository
 @echo on
 set WEB_FIRMWARE="Y:\firmware\ota-dishwasher\%VERSION%.bin"
