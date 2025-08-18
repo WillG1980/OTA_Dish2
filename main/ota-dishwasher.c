@@ -245,13 +245,6 @@ static void update_published_status(void *pvParameters) {
 static void run_program(void *pvParameters) {
   (void)pvParameters;
   gpio_mask_config_outputs(ALL_ACTORS);
-
-  /* // Group mask    uint64_t mask = HEAT | SPRAY | INLET | DRAIN | SOAP;
-      // Turn them all ON (HIGH)    gpio_port_set_mask(GPIO_PORT_0, mask);
-      // Turn them all OFF (LOW)    gpio_port_clear_mask(GPIO_PORT_0, mask);
-      // Toggle them    gpio_port_toggle_mask(GPIO_PORT_0, mask);
-  }*/
-
   char *old_cycle = "";
   Program_Entry chosen = {0};
   bool found = false;
@@ -299,14 +292,14 @@ static void run_program(void *pvParameters) {
     COPY_STRING(ActiveStatus.Cycle, Line->name_cycle);
     COPY_STRING(ActiveStatus.Step, Line->name_step);
 
-    _LOG_I("%s:%s->%d: GPIO-mask %lld\n", ActiveStatus.Program,Line->name_cycle, Line->name_step, TTR,return_masked_bits(Line->gpio_mask, ALL_ACTORS));
+    _LOG_I("%s:%s->%s  TTR:%d: GPIO-mask %lld\n", ActiveStatus.Program,Line->name_cycle, Line->name_step, TTR,return_masked_bits(Line->gpio_mask, ALL_ACTORS));
     gpio_mask_set(Line->gpio_mask); // set all pins to off
     vTaskDelay(pdMS_TO_TICKS(5 * SEC)); // run for 5 seconds minimum
 
     for (; TTR > 0; TTR -= 5000) 
         {
           gpio_mask_set(Line->gpio_mask); // set all pins to off
-          _LOG_I("\t\t%s:%s\t%d",Line->name_cycle,Line->name_step,TTR);
+          _LOG_D("\t%s:%s\t%d",Line->name_cycle,Line->name_step,TTR);
           vTaskDelay(pdMS_TO_TICKS(5000));
         }
     
