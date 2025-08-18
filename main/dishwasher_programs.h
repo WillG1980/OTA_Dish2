@@ -44,10 +44,10 @@
 #include "esp_log.h"     // if you prefer ESP_LOGI instead of _LOG_I
 
 
-#define _LOG_I(fmt, ...)   ESP_LOGI(TAG, "[Ver:%s Func:%s:%d]= " fmt, APP_VERSION, __func__, __LINE__, ##__VA_ARGS__)
-#define _LOG_W(fmt, ...)   ESP_LOGW(TAG, "[Ver:%s Func:%s:%d]= " fmt, APP_VERSION, __func__, __LINE__, ##__VA_ARGS__)
-#define _LOG_E(fmt, ...)   ESP_LOGE(TAG, "[Ver:%s Func:%s:%d]= " fmt, APP_VERSION, __func__, __LINE__, ##__VA_ARGS__)
-#define _LOG_D(fmt, ...)   ESP_LOGD(TAG, "[Ver:%s Func:%s:%d]= " fmt, APP_VERSION, __func__, __LINE__, ##__VA_ARGS__)
+#define _LOG_I(fmt, ...)   ESP_LOGI(__FILE__, "[Ver:%s Func:%s:%d]= " fmt, APP_VERSION, __func__, __LINE__, ##__VA_ARGS__)
+#define _LOG_W(fmt, ...)   ESP_LOGW(__FILE__, "[Ver:%s Func:%s:%d]= " fmt, APP_VERSION, __func__, __LINE__, ##__VA_ARGS__)
+#define _LOG_E(fmt, ...)   ESP_LOGE(__FILE__, "[Ver:%s Func:%s:%d]= " fmt, APP_VERSION, __func__, __LINE__, ##__VA_ARGS__)
+#define _LOG_D(fmt, ...)   ESP_LOGD(__FILE__, "[Ver:%s Func:%s:%d]= " fmt, APP_VERSION, __func__, __LINE__, ##__VA_ARGS__)
 
 
 static inline void log_uptime_hms(void) {
