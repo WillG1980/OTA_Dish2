@@ -146,23 +146,10 @@ static void _init_setup(void) {
   }
 
   check_and_perform_ota();
-  if (strcasecmp(ActiveStatus.Program, "Updating") == 0) {
-    int timer = 30 * SEC;
-    int counter = 0;
-    while (1) {
-      _LOG_I("Waiting (%d) for OTA Update to reboot %s", timer,
-             ActiveStatus.FirmwareStatus);
-      vTaskDelay(pdMS_TO_TICKS(timer));
-      if (strcasecmp(ActiveStatus.FirmwareStatus, "Pending Reboot") == 0) {
-        counter++;
-        if (counter > 5) {
-          esp_restart();
-        }
-      }
-    }
+  while (strcasecmp(ActiveStatus.Program, "Updating") == 0) {
+      vTaskDelay(pdMS_TO_TICKS(30*SEC));
   }
-
-  initialize_sntp_blocking();
+    initialize_sntp_blocking();
   init_switchesandleds();
   logger_init("10.0.0.123", 5000, 4096);
   logger_flush();
@@ -172,13 +159,10 @@ static void _init_setup(void) {
   //  vTaskDelay(pdMS_TO_TICKS(1000000));
 
   // create background monitoring tasks (use reasonable stack sizes)
-  _LOG_I("Queueinga new task");
   xTaskCreate(monitor_task_buttons, "monitor_task_buttons", 4096, NULL, 5,
               NULL);
-  _LOG_I("Queueinga new task");
   xTaskCreate(monitor_task_temperature, "monitor_task_temperature", 4096, NULL,
               5, NULL);
-  _LOG_I("Queueinga new task");
   xTaskCreate(update_published_status, "update_published_status", 4096, NULL, 5,
               NULL);
   // wait (up to 60s) for wifi
@@ -372,7 +356,9 @@ void app_main(void) {
   // start wifi, monitors, etc
   // choose program and start program task
   setCharArray(ActiveStatus.Program, "Tester");
-  _LOG_I("Queueinga new wash task task");
+  _LOG_I("Queueing a new wash task task");
+
+
   xTaskCreate(run_program, "Run_Program", 8192, NULL, 5, NULL);
 
   vTaskDelay(pdMS_TO_TICKS(10000));
