@@ -12,11 +12,10 @@ if errorlevel 1 (
     exit /b 1
 )
 echo Add new files to GIT
-git add . -A
+git add .
 echo Commit changed files
 git diff --cached --quiet || (
-    git commit -m "Auto-commit on build: %DATE% %TIME%" 
-    
+    git commit -m "Auto-commit on build: %DATE% %TIME%"     
     FOR /F %%i IN ('git rev-list --count HEAD') DO git tag -a build-%VERSION% -m "Build tag"
 )
 REM git push origin main

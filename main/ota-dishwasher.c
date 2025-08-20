@@ -110,7 +110,7 @@ void prepare_programs(void) {
       max_time +=
           (long long)((Line->max_time > 0) ? Line->max_time : Line->min_time);
 
-      _LOG_I("%s->%s\t->%s\t = Min TTR:%4" PRIu32 "  Max TTR:%4" PRIu32
+      _LOG_I("%s\t->%s\t->%s\t = Min TTR:%4" PRIu32 "  Max TTR:%4" PRIu32
              "  Min Temp:%3d  Max Temp:%3d  GPIO:%" PRIu64,
              SAFE_STR(Programs[i].name), SAFE_STR(Line->name_cycle),
              SAFE_STR(Line->name_step), (uint32_t)Line->min_time,
@@ -157,9 +157,9 @@ static void _init_setup(void) {
   }
   initialize_sntp_blocking();
   init_switchesandleds();
-  logger_init("10.0.0.123", 5514, 4096);
   net_probe("10.0.0.123",5514);
-  //logger_flush();
+  logger_init("10.0.0.123", 5514, 4096);
+    //logger_flush();
   init_status();
   print_status();
   prepare_programs();
@@ -356,7 +356,6 @@ void app_main(void) {
   printf("Version: %s\n", APP_VERSION);
   ESP_ERROR_CHECK(nvs_flash_init());
   _init_setup();
-
   check_and_perform_ota();
 
   printf("\n\tTotal program count: %d\n", NUM_PROGRAMS);
