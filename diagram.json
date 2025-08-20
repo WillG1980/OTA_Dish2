@@ -1,98 +1,192 @@
 {
   "version": 1,
-  "author": "OTA_DISHWASHER setup",
+  "author": "ChatGPT",
   "editor": "wokwi",
   "parts": [
-    { "type": "wokwi-esp32-devkit-v1", "id": "esp32", "top": -24, "left": -16, "attrs": {} },
+    { "type": "wokwi-esp32-devkit-v1", "id": "esp32", "top": -235.3, "left": -14.6, "attrs": {} },
     {
-      "type": "wokwi-led",
-      "id": "led25",
-      "top": -118.8,
-      "left": 282.2,
-      "attrs": { "color": "red" }
+      "type": "wokwi-pcf8574",
+      "id": "pcf1",
+      "top": -160,
+      "left": 220,
+      "attrs": { "address": "0x20" }
     },
     {
-      "type": "wokwi-resistor",
-      "id": "r25",
-      "top": -90,
+      "type": "wokwi-led",
+      "id": "led_status_washing",
+      "top": 40,
+      "left": -150,
+      "attrs": { "color": "red", "label": "status_washing" }
+    },
+    {
+      "type": "wokwi-led",
+      "id": "led_status_sensing",
+      "top": 40,
+      "left": -120,
+      "attrs": { "color": "red", "label": "status_sensing" }
+    },
+    {
+      "type": "wokwi-led",
+      "id": "led_status_drying",
+      "top": 40,
+      "left": -90,
+      "attrs": { "color": "red", "label": "status_drying" }
+    },
+    {
+      "type": "wokwi-led",
+      "id": "led_status_clean",
+      "top": 40,
+      "left": -60,
+      "attrs": { "color": "green", "label": "status_clean" }
+    },
+    {
+      "type": "wokwi-led",
+      "id": "led_delay_1",
+      "top": 40,
+      "left": -30,
+      "attrs": { "color": "yellow", "label": "delay_1" }
+    },
+    {
+      "type": "wokwi-led",
+      "id": "led_delay_2",
+      "top": 40,
+      "left": 0,
+      "attrs": { "color": "yellow", "label": "delay_2" }
+    },
+    {
+      "type": "wokwi-led",
+      "id": "led_delay_3",
+      "top": 40,
+      "left": 30,
+      "attrs": { "color": "yellow", "label": "delay_3" }
+    },
+    {
+      "type": "wokwi-led",
+      "id": "led_control_lcok",
+      "top": 40,
+      "left": 60,
+      "attrs": { "color": "red", "label": "control_lcok" }
+    },
+    {
+      "type": "wokwi-led",
+      "id": "led_switch_1",
+      "top": 40,
+      "left": 90,
+      "attrs": { "color": "white", "label": "switch_1" }
+    },
+    {
+      "type": "wokwi-led",
+      "id": "led_switch_2",
+      "top": 40,
+      "left": 120,
+      "attrs": { "color": "white", "label": "switch_2" }
+    },
+    {
+      "type": "wokwi-led",
+      "id": "led_switch_3",
+      "top": 40,
+      "left": 150,
+      "attrs": { "color": "white", "label": "switch_3" }
+    },
+    {
+      "type": "wokwi-led",
+      "id": "led_switch_4",
+      "top": 40,
+      "left": 180,
+      "attrs": { "color": "white", "label": "switch_4" }
+    },
+    {
+      "type": "wokwi-led",
+      "id": "led_switch_5",
+      "top": 40,
       "left": 210,
-      "attrs": { "value": "220" }
+      "attrs": { "color": "white", "label": "switch_5" }
     },
     {
       "type": "wokwi-led",
-      "id": "led26",
-      "top": -61.2,
-      "left": 282.2,
-      "attrs": { "color": "green" }
-    },
-    {
-      "type": "wokwi-resistor",
-      "id": "r26",
-      "top": -30,
-      "left": 210,
-      "attrs": { "value": "220" }
-    },
-    { "type": "wokwi-led", "id": "led27", "top": 6, "left": 282.2, "attrs": { "color": "blue" } },
-    {
-      "type": "wokwi-resistor",
-      "id": "r27",
-      "top": 32.75,
-      "left": 211.2,
-      "attrs": { "value": "220" }
+      "id": "led_switch_6",
+      "top": 40,
+      "left": 240,
+      "attrs": { "color": "white", "label": "switch_6" }
     },
     {
       "type": "wokwi-led",
-      "id": "led32",
-      "top": 63.6,
-      "left": 282.2,
-      "attrs": { "color": "yellow" }
-    },
-    { "type": "wokwi-resistor", "id": "r32", "top": 90, "left": 210, "attrs": { "value": "220" } },
-    {
-      "type": "wokwi-led",
-      "id": "led33",
-      "top": 121.2,
-      "left": 282.2,
-      "attrs": { "color": "white" }
+      "id": "led_switch_8",
+      "top": 40,
+      "left": 270,
+      "attrs": { "color": "white", "label": "switch_8" }
     },
     {
-      "type": "wokwi-resistor",
-      "id": "r33",
-      "top": 150,
-      "left": 210,
-      "attrs": { "value": "220" }
+      "type": "wokwi-pushbutton",
+      "id": "btn_Start",
+      "top": -160,
+      "left": 420,
+      "attrs": { "label": "Start" }
     },
-    { "type": "wokwi-pushbutton", "id": "btn1", "top": -150, "left": -180, "attrs": {} },
     {
-      "type": "wokwi-ntc-temperature-sensor",
-      "id": "ntc1",
-      "top": 180,
-      "left": -180,
-      "attrs": {}
+      "type": "wokwi-pushbutton",
+      "id": "btn_Cancel",
+      "top": -160,
+      "left": 480,
+      "attrs": { "label": "Cancel" }
+    },
+    {
+      "type": "wokwi-pushbutton",
+      "id": "btn_Delay",
+      "top": -160,
+      "left": 540,
+      "attrs": { "label": "Delay" }
+    },
+    {
+      "type": "wokwi-pushbutton",
+      "id": "btn_AirDry",
+      "top": -160,
+      "left": 600,
+      "attrs": { "label": "AirDry" }
+    },
+    {
+      "type": "wokwi-pushbutton",
+      "id": "btn_HiTempWash",
+      "top": -160,
+      "left": 660,
+      "attrs": { "label": "Hi-Temp Wash" }
+    },
+    {
+      "type": "wokwi-pushbutton",
+      "id": "btn_QuickRinse",
+      "top": -160,
+      "left": 720,
+      "attrs": { "label": "Quick Rinse" }
+    },
+    {
+      "type": "wokwi-pushbutton",
+      "id": "btn_QuickClean",
+      "top": -160,
+      "left": 780,
+      "attrs": { "label": "QuickClean" }
+    },
+    {
+      "type": "wokwi-pushbutton",
+      "id": "btn_Normal",
+      "top": -160,
+      "left": 840,
+      "attrs": { "label": "Normal" }
+    },
+    {
+      "type": "wokwi-pushbutton",
+      "id": "btn_HeavyDuty",
+      "top": -160,
+      "left": 900,
+      "attrs": { "label": "HeavyDuty" }
     }
   ],
   "connections": [
-    [ "esp32:D25", "r25:1", "green", [ "v0" ] ],
-    [ "r25:2", "led25:A", "green", [ "v0" ] ],
-    [ "led25:C", "esp32:GND.1", "black", [ "h0" ] ],
-    [ "esp32:D26", "r26:1", "green", [ "v0" ] ],
-    [ "r26:2", "led26:A", "green", [ "v0" ] ],
-    [ "led26:C", "esp32:GND.1", "black", [ "h0" ] ],
-    [ "esp32:D27", "r27:1", "green", [ "v0" ] ],
-    [ "r27:2", "led27:A", "green", [ "v0" ] ],
-    [ "led27:C", "esp32:GND.1", "black", [ "h0" ] ],
-    [ "esp32:D32", "r32:1", "green", [ "v0" ] ],
-    [ "r32:2", "led32:A", "green", [ "v0" ] ],
-    [ "led32:C", "esp32:GND.1", "black", [ "h0" ] ],
-    [ "esp32:D33", "r33:1", "green", [ "v0" ] ],
-    [ "r33:2", "led33:A", "green", [ "v0" ] ],
-    [ "led33:C", "esp32:GND.1", "black", [ "h0" ] ],
-    [ "esp32:D16", "btn1:1", "blue", [ "v0" ] ],
-    [ "btn1:2", "esp32:GND.2", "black", [ "h0" ] ],
-    [ "esp32:3V3", "ntc1:VCC", "red", [ "h0" ] ],
-    [ "esp32:GND.2", "ntc1:GND", "black", [ "h0" ] ],
-    [ "esp32:34", "ntc1:OUT", "purple", [ "v0" ] ],
-    [ "led26:C", "esp32:GND.1", "gray", [ "v0" ] ]
+
+
+
+
+
+    
   ],
   "dependencies": {}
 }
