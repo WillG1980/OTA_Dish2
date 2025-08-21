@@ -330,7 +330,9 @@ typedef struct {
 
 
 
-
+#ifndef ActiveStatus_defined
+#define ActiveStatus_defined
 status_struct ActiveStatus;
 
+#endif
 #endif
