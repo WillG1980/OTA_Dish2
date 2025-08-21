@@ -75,7 +75,7 @@ static esp_err_t root_get_handler(httpd_req_t *req)
         "<title>Dishwasher</title>"
         "<style>body{font-family:sans-serif;margin:24px}"
         ".btn{display:inline-block;margin:6px 8px;padding:10px 16px;border:0;border-radius:10px;"
-        "box-shadow:0 1px 3px rgba(0,0,0,.15);cursor:pointer}</style></head><body><h2>Dishwasher Controls</h2><div>");
+        "box-shadow:0 1px 3px rgba(0,0,0,.15);cursor:pointer}</style></head><body><h2>Dishwasher Controls (PROJECT_NAME - APP_VERSION)</h2><div>");
     for (int i = 0; i < ACTION_MAX; i++) {
         httpd_resp_sendstr_chunk(req, "<button class='btn' onclick='fetch(\"/action?action=");
         httpd_resp_sendstr_chunk(req, action_names[i]);
