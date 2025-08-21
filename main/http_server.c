@@ -45,7 +45,17 @@ static void perform_action(actions_t action) {
     switch (action) {
     case ACTION_START:
         _LOG_I("Performing START");
-        setCharArray(ActiveStatus.Program, "Normal");
+        setCharArray(ActiveStatus.Program, "Normal"); \
+        xTaskCreate(run_program, "run_program", 8192, NULL, 5, NULL);
+        break;
+    case ACTION_TEST:
+        _LOG_I("Performing TEST");
+        setCharArray(ActiveStatus.Program, "Tester");
+        xTaskCreate(run_program, "run_program", 8192, NULL, 5, NULL);
+        break;
+    case ACTION_HiTemp:
+        _LOG_I("Performing HiTemp Wash");
+        setCharArray(ActiveStatus.Program, "HiTemp");
         xTaskCreate(run_program, "run_program", 8192, NULL, 5, NULL);
         break;
 
@@ -61,11 +71,6 @@ static void perform_action(actions_t action) {
         _LOG_I("Performing STATUS (no-op; panel polls /status)");
         break;
 
-    case ACTION_TEST:
-        _LOG_I("Performing TEST");
-        setCharArray(ActiveStatus.Program, "Normal");
-        xTaskCreate(run_program, "run_program", 8192, NULL, 5, NULL);
-        break;
 
     case ACTION_UPDATE:
         _LOG_I("Performing UPDATE");
@@ -78,7 +83,7 @@ static void perform_action(actions_t action) {
         break;
 
     default:
-        _LOG_W(TAG, "Unknown action %d", action);
+        _LOG_W("Unknown action %d", action);
         break;
     }
 }

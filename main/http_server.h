@@ -8,9 +8,10 @@
 
 typedef enum {
   ACTION_START,
+  ACTION_TEST,
+  ACTION_HiTemp,
   ACTION_CANCEL,
   ACTION_STATUS,
-  ACTION_TEST,
   ACTION_UPDATE,
   ACTION_REBOOT,
   ACTION_MAX
@@ -19,9 +20,10 @@ typedef enum {
 /* Matching names for actions */
 static const char *action_names[ACTION_MAX] = {
     "Start",
+    "Test",
+    "HiTemp",
     "Cancel",
     "Status",
-    "Test",
     "Update",
     "Reboot"
 };
