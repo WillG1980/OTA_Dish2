@@ -44,13 +44,13 @@ static inline void fmt_hms(char *dst, size_t cap, int64_t us) {
 static void perform_action(actions_t action) {
     switch (action) {
     case ACTION_START:
-        _LOG_I(TAG, "Performing START");
+        _LOG_I("Performing START");
         setCharArray(ActiveStatus.Program, "Normal");
         xTaskCreate(run_program, "run_program", 8192, NULL, 5, NULL);
         break;
 
     case ACTION_CANCEL:
-        _LOG_I(TAG, "Performing CANCEL");
+        _LOG_I("Performing CANCEL");
         setCharArray(ActiveStatus.Step,    "Cancel");
         setCharArray(ActiveStatus.Cycle,   "Cancel");
         setCharArray(ActiveStatus.Program, "Cancel");
@@ -58,22 +58,22 @@ static void perform_action(actions_t action) {
         break;
 
     case ACTION_STATUS:
-        _LOG_I(TAG, "Performing STATUS (no-op; panel polls /status)");
+        _LOG_I("Performing STATUS (no-op; panel polls /status)");
         break;
 
     case ACTION_TEST:
-        _LOG_I(TAG, "Performing TEST");
+        _LOG_I("Performing TEST");
         setCharArray(ActiveStatus.Program, "Normal");
         xTaskCreate(run_program, "run_program", 8192, NULL, 5, NULL);
         break;
 
     case ACTION_UPDATE:
-        _LOG_I(TAG, "Performing UPDATE");
+        _LOG_I("Performing UPDATE");
         check_and_perform_ota();
         break;
 
     case ACTION_REBOOT:
-        _LOG_I(TAG, "Performing REBOOT");
+        _LOG_I("Performing REBOOT");
         esp_restart();
         break;
 
@@ -87,7 +87,7 @@ static void action_task(void *arg) {
     actions_t act;
     for (;;) {
         if (xQueueReceive(action_queue, &act, portMAX_DELAY)) {
-            _LOG_I(TAG, "Received action %s", action_names[act]);
+            _LOG_I("Received action %s", action_names[act]);
             perform_action(act);
         }
     }
