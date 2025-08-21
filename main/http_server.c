@@ -44,7 +44,7 @@ static inline void fmt_hms(char *dst, size_t cap, int64_t us) {
 static void perform_action(actions_t action) {
     switch (action) {
     case ACTION_START:
-        _LOG_I("Performing START");
+        _LOG_I("Performing Normal");
         setCharArray(ActiveStatus.Program, "Normal"); \
         xTaskCreate(run_program, "run_program", 8192, NULL, 5, NULL);
         break;
