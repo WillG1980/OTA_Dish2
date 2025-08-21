@@ -31,6 +31,8 @@
 static bool verify_program() {
   // Basic verification: check if the program has at least one line
   for (int i = 0; i < NUM_PROGRAMS; i++) {
+    _LOG_I("Checking program: %s -> %s", Programs[i].name, ActiveStatus.Program);
+    
     if (strcmp(Programs[i].name, ActiveStatus.Program) == 0) {
       ActiveStatus.Active_Program = Programs[i];
       return true ;     
