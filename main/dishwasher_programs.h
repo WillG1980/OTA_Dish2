@@ -49,6 +49,12 @@
 #define _LOG_D(fmt, ...)   ESP_LOGD(__FILE__, "[Ver:%s Func:%s:%d]= " fmt, APP_VERSION, __func__, __LINE__, ##__VA_ARGS__)
 
 
+#define COPY_STRING(dest, src)                                                 \
+  do {                                                                         \
+    strncpy((dest), (src), sizeof(dest) - 1);                                  \
+    (dest)[sizeof(dest) - 1] = '\0';                                           \
+  } while (0)
+
 static void run_program(void *pvParameters);
 static void prepare_programs();
 
