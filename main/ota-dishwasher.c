@@ -123,7 +123,7 @@ void prepare_programs(void) {
              (uint32_t)Line->max_time, (int)Line->min_temp, (int)Line->max_temp,
              (uint64_t)Line->gpio_mask);
 
-      /* _LOG_I("%s->%s\t->%s\t = Min TTR: %4.0lld Max TTR: %4.0lld Min Temp %3d
+      /* _LOG_I("%8s->%8s\t->%8s\t = Min TTR: %4.0lld Max TTR: %4.0lld Min Temp %3d
          Max Temp %3d GPIO:%lld", Programs[i].name, Line->name_cycle,
          Line->name_step, Line->min_time, Line->max_time, Line->min_temp,
          Line->max_temp, Line->gpio_mask);
@@ -158,7 +158,7 @@ static void _init_setup(void) {
     counter--;
   }
 
-  check_and_perform_ota();
+   
   while (strcasecmp(ActiveStatus.Program, "Updating") == 0) {
     vTaskDelay(pdMS_TO_TICKS(30 * SEC));
   }
