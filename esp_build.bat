@@ -50,7 +50,7 @@ set "WEB_DIR=Y:\firmware\ota-dishwasher"
 if not exist "!WEB_DIR!" mkdir "!WEB_DIR!" >NUL 2>&1
 set "SRC_BIN=build\ota-dishwasher.bin"
 if not exist "!SRC_BIN!" (echo Artifact missing: "!SRC_BIN!" & popd & exit /b 1)
-set "DST_BIN=!WEB_DIR!\ota-dishwasher-!VERSION!.bin"
+set "DST_BIN=!WEB_DIR!\!VERSION!.bin"
 copy /Y "!SRC_BIN!" "!DST_BIN!" >NUL || (echo Copy failed to "!DST_BIN!" & popd & exit /b 1)
 echo Build OK. Copied "!DST_BIN!".
 
