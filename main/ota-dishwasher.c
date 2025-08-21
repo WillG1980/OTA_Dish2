@@ -300,7 +300,7 @@ static void run_program(void *pvParameters) {
     COPY_STRING(ActiveStatus.Cycle, Line->name_cycle);
     COPY_STRING(ActiveStatus.Step, Line->name_step);
 
-    _LOG_I("%s:%s->%s  TTR:%d: GPIO-mask %lld HARDWARE-MASK: %lld MaskedBits: %s \n", ActiveStatus.Program,Line->name_cycle, Line->name_step, TTR,Line->gpio_mask, HEAT | SPRAY | INLET | DRAIN | SOAP, return_masked_bits(Line->gpio_mask, HEAT | SPRAY | INLET | DRAIN | SOAP));
+    _LOG_I("%10.8s->%10.8s->%10.8s  TTR:%d: GPIO-mask %lld HARDWARE-MASK: %lld MaskedBits: %s \n", ActiveStatus.Program,Line->name_cycle, Line->name_step, TTR,Line->gpio_mask, HEAT | SPRAY | INLET | DRAIN | SOAP, return_masked_bits(Line->gpio_mask, HEAT | SPRAY | INLET | DRAIN | SOAP));
     gpio_mask_set(Line->gpio_mask); // set all pins to off
     vTaskDelay(pdMS_TO_TICKS(5 * SEC)); // run for 5 seconds minimum
 
