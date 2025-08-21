@@ -43,7 +43,7 @@ static void perform_action(actions_t action) {
   case ACTION_UPDATE:
     _LOG_I(TAG, "Performing Update");
     //need to figure out how to send this to the server .. .probably hsould just be a auto-refreshing space. 
-    
+     
    check_and_perform_ota();
     break;
   case ACTION_REBOOT:
