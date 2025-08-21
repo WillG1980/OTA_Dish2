@@ -28,6 +28,9 @@
 #include <local_time.h>
 #include <dishwasher_programs.h>
 
+volatile status_struct ActiveStatus;
+
+
 static bool verify_program() {
   // Basic verification: check if the program has at least one line
   for (int i = 0; i < NUM_PROGRAMS; i++) {

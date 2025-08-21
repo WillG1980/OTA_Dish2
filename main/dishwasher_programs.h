@@ -319,7 +319,7 @@ typedef struct {
   char FirmwareStatus[20];
   char Program[10];
   bool HEAT_REQUESTED;
-  
+
   char ActiveDevices[10];
   Program_Entry Active_Program;
 
@@ -330,7 +330,7 @@ typedef struct {
 
 #ifndef ActiveStatus_defined
 #define ActiveStatus_defined
-static  status_struct ActiveStatus;
+extern volatile status_struct ActiveStatus;
 
 #endif
 
