@@ -38,7 +38,6 @@
 #endif
 
 // --- Forward declarations ---
-extern status_struct ActiveStatus;
 char* _http_get(const char *url, int *out_len, int *out_status);  // defined elsewhere
 
 static void  _get_ota(const char *url);                           // spawns task
