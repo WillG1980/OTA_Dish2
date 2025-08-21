@@ -7,19 +7,6 @@
 #include <string.h>
 #include <strings.h> // strcasecmp
 #include "local_ota.h" // For check_and_perform_ota()
-
-typedef enum {
-  ACTION_START,
-  ACTION_CANCEL,
-  ACTION_STATUS,
-  ACTION_TEST,
-  ACTION_UPDATE,
-  ACTION_REBOOT,
-  ACTION_MAX
-} actions_t;
-
-static const char *action_names[ACTION_MAX] = {"Start", "Cancel", "Status",
-                                               "Test"};
                                                
 
 /* ---- background worker ---- */

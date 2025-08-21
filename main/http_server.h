@@ -5,12 +5,15 @@
 
 
 /* Your enum of actions */
+
 typedef enum {
-    ACTION_START,
-    ACTION_CANCEL,
-    ACTION_STATUS,
-    ACTION_TEST,
-    ACTION_MAX
+  ACTION_START,
+  ACTION_CANCEL,
+  ACTION_STATUS,
+  ACTION_TEST,
+  ACTION_UPDATE,
+  ACTION_REBOOT,
+  ACTION_MAX
 } actions_t;
 
 /* Matching names for actions */
@@ -18,7 +21,9 @@ static const char *action_names[ACTION_MAX] = {
     "Start",
     "Cancel",
     "Status",
-    "Test"
+    "Test",
+    "Update",
+    "Reboot"
 };
 
 /* ---------- Handlers ---------- */
