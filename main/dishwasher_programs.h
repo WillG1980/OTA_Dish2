@@ -50,6 +50,7 @@
 
 
 static void run_program(void *pvParameters);
+static void prepare_program();
 
 
 static inline void log_uptime_hms(void) {
