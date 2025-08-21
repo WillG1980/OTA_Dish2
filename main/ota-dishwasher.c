@@ -343,7 +343,7 @@ void init_status(void) {
   _LOG_I("Ending Function");
 }
 // app_main
-
+httpd_handle_t server = NULL;
 void app_main(void) {
   _LOG_I("Booting: %s", boot_partition_cstr());
   _LOG_I("Running: %s", running_partition_cstr());
@@ -358,6 +358,8 @@ void app_main(void) {
   printf("Version: %s\n", APP_VERSION);
   ESP_ERROR_CHECK(nvs_flash_init());
   _init_setup();
+
+  server = start_webserver();
   check_and_perform_ota();
 
   printf("\n\tTotal program count: %d\n", NUM_PROGRAMS);

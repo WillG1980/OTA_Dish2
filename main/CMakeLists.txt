@@ -7,6 +7,7 @@ idf_component_register(
         "local_wifi.c"
         "http_utils.c"
         "logger.c"
+        "http_server.c"
     INCLUDE_DIRS
         "."
 )

@@ -1,5 +1,7 @@
 #include <dishwasher_programs.h>
+#include <http_server.h>
 #include <string.h>
+
 #include <esp_log.h>
 #include <esp_http_server.h>
 
@@ -12,25 +14,46 @@ static esp_err_t root_get_handler(httpd_req_t *req)
 {
     httpd_resp_set_type(req, "text/html");
 
-    // Build HTML page
-    httpd_resp_sendstr_chunk(req, "<!DOCTYPE html><html><head><title>Dishwasher</title></head><body>");
-    httpd_resp_sendstr_chunk(req, "<h2>Dishwasher Controls</h2>");
+    httpd_resp_sendstr_chunk(req,
+        "<!DOCTYPE html><html><head><meta charset=\"utf-8\">"
+        "<meta name=\"viewport\" content=\"width=device-width, initial-scale=1\">"
+        "<title>Dishwasher</title>"
+        "<style>"
+        "body{font-family:sans-serif;margin:24px}"
+        "h2{margin-bottom:12px}"
+        ".btn{display:inline-block;margin:6px 8px;padding:10px 16px;border:0;border-radius:10px;"
+        "box-shadow:0 1px 3px rgba(0,0,0,.15);cursor:pointer}"
+        ".btn:active{transform:translateY(1px)}"
+        "#msg{margin-top:14px;min-height:1.4em}"
+        "</style></head><body><h2>Dishwasher Controls</h2>"
+        "<div id='buttons'>");
 
     for (int i = 0; i < ACTION_MAX; i++) {
-        httpd_resp_sendstr_chunk(req, "<form action=\"/action\" method=\"get\">");
-        httpd_resp_sendstr_chunk(req, "<input type=\"hidden\" name=\"action\" value=\"");
+        httpd_resp_sendstr_chunk(req, "<button class='btn' onclick='doAction(\"");
         httpd_resp_sendstr_chunk(req, action_names[i]);
-        httpd_resp_sendstr_chunk(req, "\">");
-        httpd_resp_sendstr_chunk(req, "<button type=\"submit\">");
+        httpd_resp_sendstr_chunk(req, "\")'>");
         httpd_resp_sendstr_chunk(req, action_names[i]);
         httpd_resp_sendstr_chunk(req, "</button>");
-        httpd_resp_sendstr_chunk(req, "</form><br>");
     }
 
-    httpd_resp_sendstr_chunk(req, "</body></html>");
-    httpd_resp_sendstr_chunk(req, NULL); // end response
+    httpd_resp_sendstr_chunk(req,
+        "</div><div id='msg'></div>"
+        "<script>"
+        "async function doAction(a){"
+          "const b=document.getElementById('msg');"
+          "b.textContent='Sending '+a+'...';"
+          "try{"
+            "const r=await fetch('/action?action='+encodeURIComponent(a));"
+            "const t=await r.text();"
+            "b.textContent='Response: '+t;"
+          "}catch(e){b.textContent='Error: '+e;}"
+        "}"
+        "</script></body></html>");
+
+    httpd_resp_sendstr_chunk(req, NULL);
     return ESP_OK;
 }
+
 
 /* Action handler: responds to button clicks */
 static esp_err_t action_get_handler(httpd_req_t *req)
@@ -50,7 +73,8 @@ static esp_err_t action_get_handler(httpd_req_t *req)
             return ESP_OK;
         }
     }
-    httpd_resp_send_400(req);
+    httpd_resp_send_err(req, HTTPD_400_BAD_REQUEST, "Bad Request");
+
     return ESP_FAIL;
 }
 
