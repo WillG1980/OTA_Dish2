@@ -7,7 +7,7 @@ git rev-parse --is-inside-work-tree >NUL 2>&1 || (echo Not a git repo & popd & e
 
 rem --- Stage and (if needed) commit so tags point to an exact snapshot ---
 git add -A
-set DID_COMMIT=0
+set DID_COMMIT=0 
 git diff --cached --quiet || (
   git commit -m "Build attempt: %DATE% %TIME%"
   if errorlevel 1 (echo Commit failed & popd & exit /b 1)
