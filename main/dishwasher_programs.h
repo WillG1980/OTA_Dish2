@@ -49,7 +49,7 @@
 #define _LOG_D(fmt, ...)   ESP_LOGD(__FILE__, "[Ver:%s Func:%s:%d]= " fmt, APP_VERSION, __func__, __LINE__, ##__VA_ARGS__)
 
 
-
+static void run_program(void *pvParameters)
 
 
 static inline void log_uptime_hms(void) {
