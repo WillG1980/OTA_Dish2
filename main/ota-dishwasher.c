@@ -85,10 +85,11 @@ static QueueHandle_t action_queue;
 static void monitor_task_buttons(void *pvParameters);
 static void monitor_task_temperature(void *pvParameters);
 static void update_published_status(void *pvParameters);
-static void run_program(void *pvParameters);
 static void _init_setup(void);
 static void init_status();
 void print_status();
+
+
 static void net_probe(const char* ip, uint16_t port) {
     int s = socket(AF_INET, SOCK_DGRAM, IPPROTO_UDP);
     struct sockaddr_in to = {.sin_family=AF_INET, .sin_port=htons(port)};
@@ -104,8 +105,7 @@ static void _init_setup(void) {
   local_wifi_init_and_connect();
   logger_init("10.0.0.123", 5514, 4096);
   http_server_actions_init();
-  //logger_flush();
-
+  
   int counter = 60;
   while (counter > 0) {
     _LOG_I("waiting on wifi... %d remaining, status %d", counter,
@@ -115,11 +115,6 @@ static void _init_setup(void) {
       counter = -1;
     }
     counter--;
-  }
-
-   
-  while (strcasecmp(ActiveStatus.Program, "Updating") == 0) {
-    vTaskDelay(pdMS_TO_TICKS(30 * SEC));
   }
   initialize_sntp_blocking();
   init_switchesandleds();
@@ -131,21 +126,10 @@ static void _init_setup(void) {
   //  vTaskDelay(pdMS_TO_TICKS(1000000));
 
   // create background monitoring tasks (use reasonable stack sizes)
-  xTaskCreate(monitor_task_buttons, "monitor_task_buttons", 4096, NULL, 5,
-              NULL);
-  xTaskCreate(monitor_task_temperature, "monitor_task_temperature", 4096, NULL,
-              5, NULL);
-  xTaskCreate(update_published_status, "update_published_status", 4096, NULL, 5,
-              NULL);
+  xTaskCreate(monitor_task_buttons, "monitor_task_buttons", 4096, NULL, 5,              NULL);
+  xTaskCreate(monitor_task_temperature, "monitor_task_temperature", 4096, NULL,              5, NULL);
+  xTaskCreate(update_published_status, "update_published_status", 4096, NULL, 5,              NULL);
   // wait (up to 60s) for wifi
-  for (int t = 60; t > 0; t--) {
-    _LOG_I("Waiting for wifi, %d seconds remaining", t);
-    if (is_connected()) {
-      _LOG_I("Connected to Wifi");
-      break;
-    }
-    vTaskDelay(pdMS_TO_TICKS(1000));
-  }
 }
 static void monitor_task_buttons(void *pvParameters) {
   (void)pvParameters;
@@ -232,31 +216,17 @@ httpd_handle_t server = NULL;
 void app_main(void) {
   _LOG_I("Booting: %s", boot_partition_cstr());
   _LOG_I("Running: %s", running_partition_cstr());
-  _LOG_I("Version: %s", APP_VERSION);
-
   esp_log_level_set("*", ESP_LOG_DEBUG);
   esp_log_level_set("wifi", ESP_LOG_WARN);
   esp_log_level_set("wifi*", ESP_LOG_WARN);
   esp_log_level_set("phy", ESP_LOG_WARN);
   esp_log_level_set("ota_dishwasher", ESP_LOG_VERBOSE);
-
-  printf("Version: %s\n", APP_VERSION);
   ESP_ERROR_CHECK(nvs_flash_init());
+
   _init_setup();
 
   server = start_webserver();
   check_and_perform_ota();
-
-  printf("\n\tTotal program count: %d\n", NUM_PROGRAMS);
-  for (int i = 0; i < NUM_PROGRAMS; i++) {
-    printf("\n\t\tProgram Name: %s\n", Programs[i].name);
-  }
-  // start wifi, monitors, etc
-  // choose program and start program task
-  setCharArray(ActiveStatus.Program, "Tester");
-  _LOG_I("Queueing a new wash task task");
-
-
   vTaskDelay(pdMS_TO_TICKS(10000));
 
   // Keep main alive but yield CPU — do not busy-loop
@@ -264,7 +234,7 @@ void app_main(void) {
 
     if (strcmp(ActiveStatus.Cycle, "fini") == 0) {
       log_uptime_hms();
-      enter_ship_mode_forever();
+      enter_ship_mode_forever();//load is finished, shut down
     }
     vTaskDelay(pdMS_TO_TICKS(10000));
   }
