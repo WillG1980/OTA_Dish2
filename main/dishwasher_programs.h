@@ -319,6 +319,7 @@ typedef struct {
   char FirmwareStatus[20];
   char Program[10];
   bool HEAT_REQUESTED;
+  char ActiveDevices[10];
   Program_Entry Active_Program;
 
 } status_struct;
