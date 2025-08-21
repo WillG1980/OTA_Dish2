@@ -84,11 +84,12 @@ void prepare_programs(void) {
 
 void run_program(void *pvParameters) {
   (void)pvParameters;
+  _LOG_I("Program selected: %s", ActiveStatus.Program);
   gpio_mask_config_outputs(ALL_ACTORS);
   char *old_cycle = "";
   if(!verify_program()){
     setCharArray(ActiveStatus.Program,"INVALID");
-    _LOG_E(TAG, "Invalid program selected: %s", ActiveStatus.Program);
+    _LOG_E("Invalid program selected: %s", ActiveStatus.Program);
     vTaskDelete(NULL);
 
   } // continue on with the program
@@ -106,15 +107,13 @@ void run_program(void *pvParameters) {
 */
   for (size_t l = 0; l < ActiveStatus.Active_Program.num_lines; l++) {
     ProgramLineStruct *Line = &ActiveStatus.Active_Program.lines[l];
-
     gpio_mask_clear(HEAT | SPRAY | INLET | DRAIN | SOAP); // set all pins to off
     old_cycle = Line->name_cycle;
     int TTR =  (Line->max_time > Line->min_time) ? Line->max_time : Line->min_time;
-
     time_t target_time = get_unix_epoch() + TTR ;
     COPY_STRING(ActiveStatus.Cycle, Line->name_cycle);
     COPY_STRING(ActiveStatus.Step, Line->name_step);
-
+    _LOG_I("Cycle: %s , Step: %s, ActiveStatus.Cycle: %s, ActiveStatus.Step: %s", Line->name_cycle, Line->name_step, ActiveStatus.Cycle, ActiveStatus.Step);
     _LOG_I("%10.8s->%10.8s->%10.8s  TTR:%d: GPIO-mask %lld HARDWARE-MASK: %lld MaskedBits: %s \n", ActiveStatus.Program,Line->name_cycle, Line->name_step, TTR,Line->gpio_mask, HEAT | SPRAY | INLET | DRAIN | SOAP, return_masked_bits(Line->gpio_mask, HEAT | SPRAY | INLET | DRAIN | SOAP));
     gpio_mask_set(Line->gpio_mask); // set all pins to off
     vTaskDelay(pdMS_TO_TICKS(5 * SEC)); // run for 5 seconds minimum
