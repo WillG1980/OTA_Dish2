@@ -332,7 +332,7 @@ typedef struct {
 
 #ifndef ActiveStatus_defined
 #define ActiveStatus_defined
-static status_struct ActiveStatus;
+static  status_struct ActiveStatus;
 
 #endif
 #endif
