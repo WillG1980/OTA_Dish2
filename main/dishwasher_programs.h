@@ -134,10 +134,11 @@ static const uint64_t ALL_ACTORS = HEAT | SPRAY | INLET | DRAIN | SOAP;
 
 #define NUM_PROGRAMS 3
 
-#define SEC (1000)     // 1 second in milliseconds
-#define MIN (60000) // 60 seconds in milliseconds
+#define SEC (1)     // 1 second in milliseconds
+#define MIN (60) // 60 seconds in milliseconds
 #define SAFE_STR(p) ((p) ? (p) : "")
 #define NUM_DEVICES 8
+
 
 //static const char *FIRMWARE_URL = "https://house.sjcnu.com/esp32/firmware/" OTA_VERSION "/" PROJECT_NAME ".bin";
 
@@ -319,6 +320,7 @@ typedef struct {
   char FirmwareStatus[20];
   char Program[10];
   bool HEAT_REQUESTED;
+  Program_Entry Active_Program;
 
 } status_struct;
 #endif

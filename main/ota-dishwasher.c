@@ -250,48 +250,44 @@ static void update_published_status(void *pvParameters) {
   _LOG_I("Finishing");
 } // run_program task: summarises and then blocks
 
+
+static bool verify_program() {
+  // Basic verification: check if the program has at least one line
+  for (int i = 0; i < NUM_PROGRAMS; i++) {
+    if (strcmp(Programs[i].name, ActiveStatus.Program) == 0) {
+      ActiveStatus.Active_Program = Programs[i];
+      return true ;     
+    }
+  }
+  return false;
+  
+}
+
 static void run_program(void *pvParameters) {
   (void)pvParameters;
   gpio_mask_config_outputs(ALL_ACTORS);
   char *old_cycle = "";
-  Program_Entry chosen = {0};
-  bool found = false;
-
-  for (int i = 0; i < NUM_PROGRAMS; i++) {
-    if (strcmp(Programs[i].name, ActiveStatus.Program) == 0) {
-      chosen = Programs[i];
-      found = true;
-      break;
-    }
-  }
-  if (!found) {
-    _LOG_W("Program '%s' not found. Exiting run_program task.",
-           ActiveStatus.Program);
+  if(!verify_program()){
+    setCharArray(ActiveStatus.Program,"INVALID");
+    _LOG_E(TAG, "Invalid program selected: %s", ActiveStatus.Program);
     vTaskDelete(NULL);
-    return;
-  }
 
-  // Actually run cycle(s)
+  } // continue on with the program
+  
   int64_t cycle_run_time = 0;
   ActiveStatus.time_full_start = get_unix_epoch();
-  //    ActiveStatus.time_full_total = get_unix_epoch() + max_time;
-
+  ActiveStatus.time_full_total = get_unix_epoch() + ActiveStatus.Active_Program.max_time;
+  /* Move this under _test_
   _LOG_I("Activating all pins");
   gpio_mask_set(HEAT | SPRAY | INLET | DRAIN ); // set all pins to on for breif test (except SOAP)
   vTaskDelay(pdMS_TO_TICKS(3000));
-  
-  _LOG_I("DE-Activating all pins");
+    _LOG_I("DE-Activating all pins");
   gpio_mask_clear(HEAT | SPRAY | INLET | DRAIN | SOAP); // set all pins to off
   vTaskDelay(pdMS_TO_TICKS(3000));
-
+*/
   for (size_t l = 0; l < chosen.num_lines; l++) {
     ProgramLineStruct *Line = &chosen.lines[l];
 
-    /*
-    if (strcmp(old_cycle, Line->name_cycle) != 0) {
-      printf("\n-- new cycle: %s --\n", Line->name_cycle);
-    }
-    */
     gpio_mask_clear(HEAT | SPRAY | INLET | DRAIN | SOAP); // set all pins to off
     old_cycle = Line->name_cycle;
     int TTR =  (Line->max_time > Line->min_time) ? Line->max_time : Line->min_time;
