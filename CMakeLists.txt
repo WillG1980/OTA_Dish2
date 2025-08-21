@@ -26,7 +26,7 @@ execute_process(
   OUTPUT_STRIP_TRAILING_WHITESPACE
 )
 
-math(EXPR APP_VERSION "${GIT_TAG} + 1")
+math(EXPR APP_VERSION "${GIT_TAG}")
 
 # Set project name
 set(PROJECT_NAME_STR "ota-dishwasher")
@@ -38,6 +38,7 @@ add_compile_definitions(
   APP_VERSION="${APP_VERSION}"
   PROJECT_NAME="${PROJECT_NAME_STR}"
  # TAG="Dishwasher"
+ 
   WIFI_SSID_REAL="House619"
   WIFI_PASS_REAL="Wifi6860"
 
