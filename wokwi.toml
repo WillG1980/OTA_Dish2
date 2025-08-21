@@ -1,6 +1,8 @@
 [wokwi]
 version = 1
 firmware = 'build/flasher_args.json'
-[[chip]]
-name = "pcf8574"               # => use type "chip-pcf8574" in diagram.json
-binary = "chips/pcf8574.chip.wasm"
+[net]
+gateway="ws://localhost:9011"
+[[net.forward]]
+    from = "localhost:8180"
+    to = "target:80"
