@@ -49,6 +49,9 @@
 #define _LOG_D(fmt, ...)   ESP_LOGD(__FILE__, "[Ver:%s Func:%s:%d]= " fmt, APP_VERSION, __func__, __LINE__, ##__VA_ARGS__)
 
 
+
+
+
 static inline void log_uptime_hms(void) {
     int64_t us = esp_timer_get_time();          // microseconds since boot
     int64_t s  = us / 1000000LL;
@@ -323,4 +326,11 @@ typedef struct {
   Program_Entry Active_Program;
 
 } status_struct;
+
+
+
+
+
+status_struct ActiveStatus;
+
 #endif

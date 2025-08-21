@@ -74,7 +74,7 @@ static void enter_ship_mode_forever(void) {
     (dest)[sizeof(dest) - 1] = '\0';                                           \
   } while (0)
 // global status
-status_struct ActiveStatus;
+
 #include "esp_system.h"
 
 

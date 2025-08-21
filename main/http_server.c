@@ -17,6 +17,7 @@ static void perform_action(actions_t action) {
   switch (action) {
   case ACTION_START:
     _LOG_I(TAG, "Performing START");
+    
     break;
   case ACTION_CANCEL:
     _LOG_I(TAG, "Performing CANCEL");
