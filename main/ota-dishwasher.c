@@ -285,8 +285,8 @@ static void run_program(void *pvParameters) {
   gpio_mask_clear(HEAT | SPRAY | INLET | DRAIN | SOAP); // set all pins to off
   vTaskDelay(pdMS_TO_TICKS(3000));
 */
-  for (size_t l = 0; l < chosen.num_lines; l++) {
-    ProgramLineStruct *Line = &chosen.lines[l];
+  for (size_t l = 0; l < ActiveStatus.Active_Program.num_lines; l++) {
+    ProgramLineStruct *Line = &ActiveStatus.Active_Program.lines[l];
 
     gpio_mask_clear(HEAT | SPRAY | INLET | DRAIN | SOAP); // set all pins to off
     old_cycle = Line->name_cycle;
