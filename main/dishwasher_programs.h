@@ -56,8 +56,8 @@
   } while (0)
 
 static void run_program(void *pvParameters);
-static void prepare_programs();
 
+static void prepare_programs();
 
 static inline void log_uptime_hms(void) {
     int64_t us = esp_timer_get_time();          // microseconds since boot
@@ -70,7 +70,6 @@ static inline void log_uptime_hms(void) {
     _LOG_I("Uptime: %lld:%02d:%02d", (long long)h, m, t);
     // Or: ESP_LOGI("UPTIME", "Uptime: %lld:%02d:%02d", (long long)h, m, t);
 }
-
 // Configure all bits in mask as outputs (call once at init)
 static inline void gpio_mask_config_outputs(uint64_t mask) {
     gpio_config_t io = {
@@ -82,7 +81,6 @@ static inline void gpio_mask_config_outputs(uint64_t mask) {
     };
     gpio_config(&io);
 }
-
 // Set HIGH for all pins in mask
 static inline void IRAM_ATTR gpio_mask_set(uint64_t mask) {
     uint32_t lo = (uint32_t)mask;
@@ -90,7 +88,6 @@ static inline void IRAM_ATTR gpio_mask_set(uint64_t mask) {
     if (lo) REG_WRITE(GPIO_OUT_W1TS_REG, lo);
     if (hi) REG_WRITE(GPIO_OUT1_W1TS_REG, hi);
 }
-
 // Set LOW for all pins in mask
 static inline void IRAM_ATTR gpio_mask_clear(uint64_t mask) {
     uint32_t lo = (uint32_t)mask;
@@ -98,12 +95,10 @@ static inline void IRAM_ATTR gpio_mask_clear(uint64_t mask) {
     if (lo) REG_WRITE(GPIO_OUT_W1TC_REG, lo);
     if (hi) REG_WRITE(GPIO_OUT1_W1TC_REG, hi);
 }
-
 // Write level to all pins in mask (level: 0/1)
 static inline void IRAM_ATTR gpio_mask_write(uint64_t mask, bool level) {
     if (level) gpio_mask_set(mask); else gpio_mask_clear(mask);
 }
-
 // Toggle all pins in mask
 static inline void IRAM_ATTR gpio_mask_toggle(uint64_t mask) {
     uint32_t lo = (uint32_t)mask;
@@ -121,15 +116,9 @@ static inline void IRAM_ATTR gpio_mask_toggle(uint64_t mask) {
     }
 }
 
-
-
-
-
 #ifndef BIT64
 #define BIT64(n) (1ULL << (n))
 #endif
-
-
 
 #define HEAT (BIT64(GPIO_NUM_32))
 #define SPRAY (BIT64(GPIO_NUM_33))
