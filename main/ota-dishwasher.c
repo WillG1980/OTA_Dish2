@@ -205,7 +205,7 @@ static void monitor_task_temperature(void *pvParameters) {
   }
 }
 void print_status() {
-  printf("\nStatus update: State: %s/%s\
+  /* printf("\nStatus update: State: %s/%s\
           \n\tTemperature: %d\
           \n\tElapsed Time(full):\t%lld \tFull ETA: %lld\
           \n\tElapsed Time(Cycle):\t%lld \tCycle ETA: %lld\
@@ -215,6 +215,7 @@ void print_status() {
          (long long)ActiveStatus.time_full_total,
          (long long)(get_unix_epoch() - ActiveStatus.time_cycle_start),
          (long long)ActiveStatus.time_cycle_total, ActiveStatus.IPAddress);
+*/
 };
 static void update_published_status(void *pvParameters) {
   (void)pvParameters;

@@ -6,12 +6,14 @@
 #include <dishwasher_programs.h>
 #include <string.h>
 #include <strings.h> // strcasecmp
+#include "local_ota.h" // For check_and_perform_ota()
 
 typedef enum {
   ACTION_START,
   ACTION_CANCEL,
   ACTION_STATUS,
   ACTION_TEST,
+  ACTION_UPDATE,
   ACTION_MAX
 } actions_t;
 
@@ -36,6 +38,11 @@ static void perform_action(actions_t action) {
   case ACTION_TEST:
     _LOG_I(TAG, "Performing TEST");
     break;
+    case ACTION_UPDATE:
+    _LOG_I(TAG, "Performing Update");
+   check_and_perform_ota();
+    break;
+  
   default:
     _LOG_W(TAG, "Unknown action %d", action);
     break;
@@ -46,6 +53,7 @@ static void action_task(void *arg) {
   actions_t act;
   for (;;) {
     if (xQueueReceive(action_queue, &act, portMAX_DELAY)) {
+    _LOG_I(TAG, "Received action %s", action_names[act]);
       perform_action(act);
     }
   }
@@ -134,7 +142,7 @@ static esp_err_t action_get_handler(httpd_req_t *req) {
 
       /* hand off to background task (non-blocking) */
       if (xQueueSend(action_queue, &act, 0) != pdPASS) {
-        ESP_LOGW(TAG, "Action queue full; dropping %s", param);
+        _LOG_W(TAG, "Action queue full; dropping %s", param);
       }
       return ESP_OK;
     }
