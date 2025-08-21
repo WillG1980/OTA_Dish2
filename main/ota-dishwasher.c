@@ -29,6 +29,8 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <http_server.h>
+
 
 // #include "analog.h"
 #include "buttons.h"
