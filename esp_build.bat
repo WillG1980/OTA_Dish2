@@ -61,6 +61,7 @@ echo Pushed branch and tags.
 popd
 endlocal
 exit /b 0
+ 
 
 :EnsureUpstreamOrSet
 for /f %%b in ('git rev-parse --abbrev-ref HEAD') do set BRANCH=%%b
