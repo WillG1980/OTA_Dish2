@@ -7,7 +7,7 @@
 #include <string.h>
 #include <strings.h> // strcasecmp
 #include "local_ota.h" // For check_and_perform_ota()
-                                               
+#include "http_server.h"                                                
 
 /* ---- background worker ---- */
 static QueueHandle_t action_queue = NULL;
