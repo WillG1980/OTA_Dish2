@@ -82,7 +82,7 @@ void prepare_programs(void) {
   }
 }
 
-static void run_program(void *pvParameters) {
+void run_program(void *pvParameters) {
   (void)pvParameters;
   gpio_mask_config_outputs(ALL_ACTORS);
   char *old_cycle = "";

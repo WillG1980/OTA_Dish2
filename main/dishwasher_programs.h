@@ -55,9 +55,9 @@
     (dest)[sizeof(dest) - 1] = '\0';                                           \
   } while (0)
 
-static void run_program(void *pvParameters);
+void run_program(void *pvParameters);
 
-static void prepare_programs();
+void prepare_programs();
 
 static inline void log_uptime_hms(void) {
     int64_t us = esp_timer_get_time();          // microseconds since boot
