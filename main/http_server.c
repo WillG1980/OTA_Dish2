@@ -14,6 +14,7 @@ typedef enum {
   ACTION_STATUS,
   ACTION_TEST,
   ACTION_UPDATE,
+  ACTION_REBOOT,
   ACTION_MAX
 } actions_t;
 
@@ -38,9 +39,13 @@ static void perform_action(actions_t action) {
   case ACTION_TEST:
     _LOG_I(TAG, "Performing TEST");
     break;
-    case ACTION_UPDATE:
+  case ACTION_UPDATE:
     _LOG_I(TAG, "Performing Update");
    check_and_perform_ota();
+    break;
+  case ACTION_REBOOT:
+    _LOG_I(TAG, "Performing Reboot");
+   esp_restart();
     break;
   
   default:
