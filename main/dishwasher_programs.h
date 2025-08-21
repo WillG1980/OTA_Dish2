@@ -1,7 +1,6 @@
 #ifndef DISHWASHER_PROGRAM_H
 #define DISHWASHER_PROGRAM_H
 
-
 #ifndef PROJECT_NAME
 #define PROJECT_NAME "OTA-Dishwasher"
 #endif
@@ -299,8 +298,6 @@ static inline void delay_monitor(int64_t millis,int64_t time_between_beats){
         
         vTaskDelay(pdMS_TO_TICKS(wait));
     }
-
-
 }
 
 typedef struct {

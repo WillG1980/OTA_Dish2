@@ -144,6 +144,7 @@ static void _init_setup(void) {
   // modules)
   local_wifi_init_and_connect();
   logger_init("10.0.0.123", 5514, 4096);
+  http_server_actions_init();
   //logger_flush();
 
   int counter = 60;
@@ -164,8 +165,7 @@ static void _init_setup(void) {
   initialize_sntp_blocking();
   init_switchesandleds();
   net_probe("10.0.0.123",5514);
-  logger_init("10.0.0.123", 5514, 4096);
-    //logger_flush();
+      //logger_flush();
   init_status();
   print_status();
   prepare_programs();

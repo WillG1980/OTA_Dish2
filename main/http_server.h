@@ -27,6 +27,7 @@ static const char *action_names[ACTION_MAX] = {
 static esp_err_t root_get_handler(httpd_req_t *req);
 /* Action handler: responds to button clicks */
 static esp_err_t action_get_handler(httpd_req_t *req);
+void http_server_actions_init(void);
 
 /* ---------- Server Start/Stop ---------- */
 

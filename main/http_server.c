@@ -1,3 +1,4 @@
+#include <dishwasher_programs.h>
 #include <string.h>
 #include <strings.h>           // strcasecmp
 #include "freertos/FreeRTOS.h"
@@ -6,7 +7,6 @@
 #include "esp_log.h"
 #include "esp_http_server.h"
 
-static const char *TAG = "HTTP_SERVER";
 
 typedef enum {
     ACTION_START,
@@ -25,11 +25,11 @@ static TaskHandle_t action_task_handle = NULL;
 static void perform_action(actions_t action)
 {
     switch (action) {
-        case ACTION_START:  ESP_LOGI(TAG, "Performing START");  break;
-        case ACTION_CANCEL: ESP_LOGI(TAG, "Performing CANCEL"); break;
-        case ACTION_STATUS: ESP_LOGI(TAG, "Performing STATUS"); break;
-        case ACTION_TEST:   ESP_LOGI(TAG, "Performing TEST");   break;
-        default:            ESP_LOGW(TAG, "Unknown action %d", action); break;
+        case ACTION_START:  _LOG_I(TAG, "Performing START");  break;
+        case ACTION_CANCEL: _LOG_I(TAG, "Performing CANCEL"); break;
+        case ACTION_STATUS: _LOG_I(TAG, "Performing STATUS"); break;
+        case ACTION_TEST:   _LOG_I(TAG, "Performing TEST");   break;
+        default:            _LOG_W(TAG, "Unknown action %d", action); break;
     }
 }
 
@@ -104,7 +104,6 @@ static esp_err_t action_get_handler(httpd_req_t *req)
                 httpd_resp_send_err(req, HTTPD_400_BAD_REQUEST, "Unknown action");
                 return ESP_FAIL;
             }
-
             /* respond immediately */
             httpd_resp_sendstr(req, param);
 
@@ -131,7 +130,7 @@ httpd_handle_t start_webserver(void)
         httpd_register_uri_handler(server, &uri_root);
         httpd_register_uri_handler(server, &uri_action);
     } else {
-        ESP_LOGE(TAG, "httpd_start failed");
+        _LOG_E(TAG, "httpd_start failed");
     }
     return server;
 }
