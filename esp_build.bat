@@ -62,7 +62,6 @@ popd
 endlocal
 exit /b 0
  
-
 :EnsureUpstreamOrSet
 for /f %%b in ('git rev-parse --abbrev-ref HEAD') do set BRANCH=%%b
 git rev-parse --abbrev-ref --symbolic-full-name @{u} >NUL 2>&1
