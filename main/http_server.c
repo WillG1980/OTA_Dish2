@@ -31,7 +31,6 @@ static inline int64_t remaining_us_from(int64_t start, int64_t total_or_end, int
     int64_t rem = end_us - now_us;
     return rem > 0 ? rem : 0;
 }
-
 static inline void fmt_hms(char *dst, size_t cap, int64_t us) {
     int64_t s = us / 1000000;
     long long h = (long long)(s / 3600);
@@ -39,7 +38,6 @@ static inline void fmt_hms(char *dst, size_t cap, int64_t us) {
     long long sec = (long long)(s % 60);
     snprintf(dst, cap, "%lld:%02lld:%02lld", h, m, sec);
 }
-
 /* ====================== action execution ======================= */
 static void perform_action(actions_t action) {
     switch (action) {
