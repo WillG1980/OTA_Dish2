@@ -17,16 +17,26 @@ static void perform_action(actions_t action) {
   switch (action) {
   case ACTION_START:
     _LOG_I(TAG, "Performing START");
-    
+    setCharArray(ActiveStatus.Program,"Normal");
+    xTaskCreate(run_program, "run_program", 8192, NULL, 5, NULL);
     break;
   case ACTION_CANCEL:
     _LOG_I(TAG, "Performing CANCEL");
+    setCharArray(ActiveStatus.Step, "Cancel");
+    setCharArray(ActiveStatus.Cycle, "Cancel");
+    setCharArray(ActiveStatus.Program, "Cancel");
+    ActiveStatus.HEAT_REQUESTED= false;
+    
+
     break;
   case ACTION_STATUS:
     _LOG_I(TAG, "Performing STATUS");
     break;
   case ACTION_TEST:
     _LOG_I(TAG, "Performing TEST");
+        setCharArray(ActiveStatus.Program,"Normal");
+    xTaskCreate(run_program, "run_program", 8192, NULL, 5, NULL);
+
     break;
   case ACTION_UPDATE:
     _LOG_I(TAG, "Performing Update");
