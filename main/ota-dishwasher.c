@@ -77,6 +77,10 @@ static void enter_ship_mode_forever(void) {
 status_struct ActiveStatus;
 #include "esp_system.h"
 
+
+static QueueHandle_t action_queue;
+
+
 // prototypes (task functions must be of type void f(void *))
 static void monitor_task_buttons(void *pvParameters);
 static void monitor_task_temperature(void *pvParameters);
