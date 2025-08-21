@@ -41,7 +41,7 @@
 #include "esp_attr.h"
 #include "esp_timer.h"   // esp_timer_get_time()
 #include "esp_log.h"     // if you prefer ESP_LOGI instead of _LOG_I
-
+#include <local_time.h>
 
 #define _LOG_I(fmt, ...)   ESP_LOGI(__FILE__, "[Ver:%s Func:%s:%d]= " fmt, APP_VERSION, __func__, __LINE__, ##__VA_ARGS__)
 #define _LOG_W(fmt, ...)   ESP_LOGW(__FILE__, "[Ver:%s Func:%s:%d]= " fmt, APP_VERSION, __func__, __LINE__, ##__VA_ARGS__)
