@@ -116,7 +116,7 @@ void prepare_programs(void) {
       max_time +=
           (long long)((Line->max_time > 0) ? Line->max_time : Line->min_time);
 
-      _LOG_I("%s\t->%s\t->%s\t = Min TTR:%4" PRIu32 "  Max TTR:%4" PRIu32
+      _LOG_I("%6s\t->%6s\t->%6s\t = Min TTR:%4" PRIu32 "  Max TTR:%4" PRIu32
              "  Min Temp:%3d  Max Temp:%3d  GPIO:%" PRIu64,
              SAFE_STR(Programs[i].name), SAFE_STR(Line->name_cycle),
              SAFE_STR(Line->name_step), (uint32_t)Line->min_time,
