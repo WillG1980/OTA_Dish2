@@ -16,6 +16,10 @@ add_compile_options($<$<COMPILE_LANGUAGE:CXX>:-Wno-unused-function>)
 
 add_compile_options($<$<COMPILE_LANGUAGE:C>:-Wno-deprecated-declarations>)
 add_compile_options($<$<COMPILE_LANGUAGE:CXX>:-Wno-deprecated-declarations>)
+
+add_compile_options($<$<COMPILE_LANGUAGE:C>:-Wno-discarded-qualifiers>)
+add_compile_options($<$<COMPILE_LANGUAGE:CXX>:-Wno-discarded-qualifiers>)
+
 include($ENV{IDF_PATH}/tools/cmake/project.cmake)
 
 # Get git tag
@@ -38,7 +42,7 @@ add_compile_definitions(
   APP_VERSION="${APP_VERSION}"
   PROJECT_NAME="${PROJECT_NAME_STR}"
  # TAG="Dishwasher"
- 
+
   WIFI_SSID_REAL="House619"
   WIFI_PASS_REAL="Wifi6860"
 
