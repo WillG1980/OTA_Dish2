@@ -13,7 +13,6 @@
 #include "dishwasher_programs.h"  // run_program(), ActiveStatus, setCharArray(...)
 
 // Use your project's logging macros
-#define TAG "http_server"
 // Expecting _LOG_X(TAG, ...) to be defined by your project (INFO/DEBUG/etc).
 
 /* ===================== Actions ===================== */
