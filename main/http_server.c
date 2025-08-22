@@ -58,11 +58,13 @@ static void perform_action(actions_t action) {
         break;
 
     case ACTION_CANCEL:
+        gpio_mask_clear(HEAT | SPRAY | INLET | DRAIN | SOAP); // set all pins to off
         _LOG_I("Performing CANCEL");
         setCharArray(ActiveStatus.Step,    "Cancel");
         setCharArray(ActiveStatus.Cycle,   "Cancel");
         setCharArray(ActiveStatus.Program, "Cancel");
         ActiveStatus.HEAT_REQUESTED = false;
+        esp_restart();
         break;
 
     case ACTION_STATUS:

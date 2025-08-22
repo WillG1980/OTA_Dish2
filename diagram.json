@@ -122,27 +122,6 @@
       "top": -147.6,
       "left": -130.6,
       "attrs": { "color": "yellow", "label": "R_SOAP" }
-    },
-    {
-      "type": "wokwi-led",
-      "id": "relay6_led",
-      "top": -118.8,
-      "left": -92.2,
-      "attrs": { "color": "yellow", "label": "RELAY6" }
-    },
-    {
-      "type": "wokwi-led",
-      "id": "relay7_led",
-      "top": -80.4,
-      "left": -92.2,
-      "attrs": { "color": "yellow", "label": "RELAY7" }
-    },
-    {
-      "type": "wokwi-led",
-      "id": "relay8_led",
-      "top": -42,
-      "left": -111.4,
-      "attrs": { "color": "yellow", "label": "RELAY8" }
     }
   ],
   "connections": [
@@ -179,13 +158,8 @@
     [ "esp:26", "R_DRAIN_led:A", "blue", [] ],
     [ "R_DRAIN_led:C", "esp:GND.1", "yellow", [] ],
     [ "esp:27", "R_SOAP_led:A", "blue", [] ],
-    [ "R_SOAP_led:C", "esp:GND.1", "yellow", [] ],
-    [ "esp:14", "relay6_led:A", "blue", [] ],
-    [ "relay6_led:C", "esp:GND.1", "yellow", [] ],
-    [ "esp:12", "relay7_led:A", "blue", [] ],
-    [ "relay7_led:C", "esp:GND.1", "yellow", [] ],
-    [ "esp:13", "relay8_led:A", "blue", [] ],
-    [ "relay8_led:C", "esp:GND.1", "yellow", [] ]
+    [ "R_SOAP_led:C", "esp:GND.1", "yellow", [] ]
   ],
+  "serialMonitor": { "display": "terminal" },
   "dependencies": {}
 }
