@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "author": "William G. / ChatGPT",
+  "author": "William G. /",
   "editor": "wokwi",
   "parts": [
     {
@@ -14,392 +14,178 @@
     {
       "type": "wokwi-led",
       "id": "led_washing",
-      "top": -120,
-      "left": 130,
-      "attrs": {
-        "color": "red",
-        "label": "status_washing"
-      }
+      "top": -99.6,
+      "left": -293.8,
+      "attrs": { "color": "red", "label": "status_washing" }
     },
     {
       "type": "wokwi-led",
       "id": "led_sensing",
-      "top": -120,
-      "left": 170,
-      "attrs": {
-        "color": "red",
-        "label": "status_sensing"
-      }
+      "top": -99.6,
+      "left": -159.4,
+      "attrs": { "color": "red", "label": "status_sensing" }
     },
     {
       "type": "wokwi-led",
       "id": "led_drying",
-      "top": -120,
-      "left": 210,
-      "attrs": {
-        "color": "red",
-        "label": "status_drying"
-      }
+      "top": -99.6,
+      "left": -207.4,
+      "attrs": { "color": "red", "label": "status_drying" }
     },
     {
       "type": "wokwi-led",
       "id": "led_clean",
-      "top": -80,
-      "left": 130,
-      "attrs": {
-        "color": "red",
-        "label": "status_clean"
-      }
+      "top": -99.6,
+      "left": -255.4,
+      "attrs": { "color": "red", "label": "status_clean" }
     },
     {
       "type": "wokwi-led",
       "id": "led_delay1",
-      "top": -80,
-      "left": 170,
-      "attrs": {
-        "color": "red",
-        "label": "delay_1"
-      }
+      "top": -32.4,
+      "left": 186.2,
+      "attrs": { "color": "red", "label": "delay_1" }
     },
     {
       "type": "wokwi-led",
       "id": "led_delay3",
-      "top": -80,
-      "left": 210,
-      "attrs": {
-        "color": "red",
-        "label": "delay_3"
-      }
+      "top": -22.8,
+      "left": 234.2,
+      "attrs": { "color": "red", "label": "delay_3" }
     },
     {
       "type": "wokwi-led",
       "id": "led_sw4",
       "top": -40,
       "left": 130,
-      "attrs": {
-        "color": "red",
-        "label": "switch_4"
-      }
+      "attrs": { "color": "red", "label": "switch_4" }
     },
     {
       "type": "wokwi-pushbutton",
       "id": "sw_start",
-      "top": 40,
-      "left": 130,
-      "rotate": 0,
-      "attrs": {
-        "label": "Start"
-      }
+      "top": 150.2,
+      "left": -38.4,
+      "attrs": { "label": "Start" }
     },
     {
       "type": "wokwi-pushbutton",
       "id": "sw_cancel",
-      "top": 80,
-      "left": 130,
-      "rotate": 0,
-      "attrs": {
-        "label": "Cancel"
-      }
+      "top": 150.2,
+      "left": -124.8,
+      "attrs": { "label": "Cancel" }
     },
     {
       "type": "wokwi-pushbutton",
       "id": "sw_delay",
-      "top": 120,
-      "left": 130,
-      "rotate": 0,
-      "attrs": {
-        "label": "Delay"
-      }
+      "top": 150.2,
+      "left": -211.2,
+      "attrs": { "label": "Delay" }
     },
     {
       "type": "wokwi-pushbutton",
       "id": "sw_qr",
-      "top": 160,
-      "left": 130,
-      "rotate": 0,
-      "attrs": {
-        "label": "Quick Rinse"
-      }
+      "top": 150.2,
+      "left": -278.4,
+      "attrs": { "label": "Quick Rinse" }
     },
     {
       "type": "wokwi-led",
       "id": "relay1_led",
-      "top": -160,
-      "left": -10,
-      "attrs": {
-        "color": "yellow",
-        "label": "RELAY1"
-      }
+      "top": -147.6,
+      "left": -322.6,
+      "attrs": { "color": "yellow", "label": "RELAY1" }
     },
     {
       "type": "wokwi-led",
       "id": "relay2_led",
-      "top": -120,
-      "left": -10,
-      "attrs": {
-        "color": "yellow",
-        "label": "RELAY2"
-      }
+      "top": -147.6,
+      "left": -274.6,
+      "attrs": { "color": "yellow", "label": "RELAY2" }
     },
     {
       "type": "wokwi-led",
       "id": "relay3_led",
-      "top": -80,
-      "left": -10,
-      "attrs": {
-        "color": "yellow",
-        "label": "RELAY3"
-      }
+      "top": -147.6,
+      "left": -226.6,
+      "attrs": { "color": "yellow", "label": "RELAY3" }
     },
     {
       "type": "wokwi-led",
       "id": "relay4_led",
-      "top": -40,
-      "left": -10,
-      "attrs": {
-        "color": "yellow",
-        "label": "RELAY4"
-      }
+      "top": -147.6,
+      "left": -178.6,
+      "attrs": { "color": "yellow", "label": "RELAY4" }
     },
     {
       "type": "wokwi-led",
       "id": "relay5_led",
-      "top": -160,
-      "left": -70,
-      "attrs": {
-        "color": "yellow",
-        "label": "RELAY5"
-      }
+      "top": -147.6,
+      "left": -130.6,
+      "attrs": { "color": "yellow", "label": "RELAY5" }
     },
     {
       "type": "wokwi-led",
       "id": "relay6_led",
-      "top": -120,
-      "left": -70,
-      "attrs": {
-        "color": "yellow",
-        "label": "RELAY6"
-      }
+      "top": -118.8,
+      "left": -92.2,
+      "attrs": { "color": "yellow", "label": "RELAY6" }
     },
     {
       "type": "wokwi-led",
       "id": "relay7_led",
-      "top": -80,
-      "left": -70,
-      "attrs": {
-        "color": "yellow",
-        "label": "RELAY7"
-      }
+      "top": -80.4,
+      "left": -92.2,
+      "attrs": { "color": "yellow", "label": "RELAY7" }
     },
     {
       "type": "wokwi-led",
       "id": "relay8_led",
-      "top": -40,
-      "left": -70,
-      "attrs": {
-        "color": "yellow",
-        "label": "RELAY8"
-      }
+      "top": -42,
+      "left": -111.4,
+      "attrs": { "color": "yellow", "label": "RELAY8" }
     }
   ],
   "connections": [
-    [
-      "esp:GPIO17",
-      "led_washing:A",
-      "red"
-    ],
-    [
-      "led_washing:C",
-      "esp:GND",
-      "green"
-    ],
-    [
-      "esp:GPIO18",
-      "led_sensing:A",
-      "red"
-    ],
-    [
-      "led_sensing:C",
-      "esp:GPIO16",
-      "green"
-    ],
-    [
-      "esp:GPIO17",
-      "led_drying:A",
-      "red"
-    ],
-    [
-      "led_drying:C",
-      "esp:GPIO4",
-      "green"
-    ],
-    [
-      "esp:GPIO19",
-      "led_clean:A",
-      "red"
-    ],
-    [
-      "led_clean:C",
-      "esp:GPIO5",
-      "green"
-    ],
-    [
-      "esp:GPIO19",
-      "led_delay1:A",
-      "red"
-    ],
-    [
-      "led_delay1:C",
-      "esp:GPIO16",
-      "green"
-    ],
-    [
-      "esp:GPIO17",
-      "led_delay3:A",
-      "red"
-    ],
-    [
-      "led_delay3:C",
-      "esp:GPIO16",
-      "green"
-    ],
-    [
-      "esp:GPIO17",
-      "led_sw4:A",
-      "red"
-    ],
-    [
-      "led_sw4:C",
-      "esp:GPIO5",
-      "green"
-    ],
-    [
-      "esp:GPIO23",
-      "sw_start:1.l",
-      "black"
-    ],
-    [
-      "sw_start:2.r",
-      "esp:GPIO4",
-      "orange"
-    ],
-    [
-      "esp:GPIO23",
-      "sw_cancel:1.l",
-      "black"
-    ],
-    [
-      "sw_cancel:2.r",
-      "esp:GPIO35",
-      "orange"
-    ],
-    [
-      "esp:GPIO23",
-      "sw_delay:1.l",
-      "black"
-    ],
-    [
-      "sw_delay:2.r",
-      "esp:GPIO16",
-      "orange"
-    ],
-    [
-      "esp:GPIO23",
-      "sw_qr:1.l",
-      "black"
-    ],
-    [
-      "sw_qr:2.r",
-      "esp:GPIO5",
-      "orange"
-    ],
-    [
-      "esp:GPIO32",
-      "relay1_led:A",
-      "blue"
-    ],
-    [
-      "relay1_led:C",
-      "esp:GND",
-      "yellow"
-    ],
-    [
-      "esp:GPIO33",
-      "relay2_led:A",
-      "blue"
-    ],
-    [
-      "relay2_led:C",
-      "esp:GND",
-      "yellow"
-    ],
-    [
-      "esp:GPIO25",
-      "relay3_led:A",
-      "blue"
-    ],
-    [
-      "relay3_led:C",
-      "esp:GND",
-      "yellow"
-    ],
-    [
-      "esp:GPIO26",
-      "relay4_led:A",
-      "blue"
-    ],
-    [
-      "relay4_led:C",
-      "esp:GND",
-      "yellow"
-    ],
-    [
-      "esp:GPIO27",
-      "relay5_led:A",
-      "blue"
-    ],
-    [
-      "relay5_led:C",
-      "esp:GND",
-      "yellow"
-    ],
-    [
-      "esp:GPIO14",
-      "relay6_led:A",
-      "blue"
-    ],
-    [
-      "relay6_led:C",
-      "esp:GND",
-      "yellow"
-    ],
-    [
-      "esp:GPIO12",
-      "relay7_led:A",
-      "blue"
-    ],
-    [
-      "relay7_led:C",
-      "esp:GND",
-      "yellow"
-    ],
-    [
-      "esp:GPIO13",
-      "relay8_led:A",
-      "blue"
-    ],
-    [
-      "relay8_led:C",
-      "esp:GND",
-      "yellow"
-    ],
-     ["esp:TX0", "$serialMonitor:RX", "", []],
-    ["esp:RX0", "$serialMonitor:TX", "", []]
+    [ "esp:17", "led_washing:A", "red", [] ],
+    [ "led_washing:C", "esp:GND.1", "green", [] ],
+    [ "esp:18", "led_sensing:A", "red", [] ],
+    [ "led_sensing:C", "esp:16", "green", [] ],
+    [ "esp:17", "led_drying:A", "red", [] ],
+    [ "led_drying:C", "esp:4", "green", [] ],
+    [ "esp:19", "led_clean:A", "red", [] ],
+    [ "led_clean:C", "esp:5", "green", [] ],
+    [ "esp:19", "led_delay1:A", "red", [] ],
+    [ "led_delay1:C", "esp:16", "green", [] ],
+    [ "esp:17", "led_delay3:A", "red", [] ],
+    [ "led_delay3:C", "esp:16", "green", [] ],
+    [ "esp:17", "led_sw4:A", "red", [] ],
+    [ "led_sw4:C", "esp:5", "green", [] ],
+    [ "esp:23", "sw_start:1.l", "black", [] ],
+    [ "sw_start:2.r", "esp:4", "orange", [] ],
+    [ "esp:23", "sw_cancel:1.l", "black", [] ],
+    [ "sw_cancel:2.r", "esp:35", "orange", [] ],
+    [ "esp:23", "sw_delay:1.l", "black", [] ],
+    [ "sw_delay:2.r", "esp:16", "orange", [] ],
+    [ "esp:23", "sw_qr:1.l", "black", [] ],
+    [ "sw_qr:2.r", "esp:5", "orange", [] ],
+    [ "esp:32", "relay1_led:A", "blue", [] ],
+    [ "relay1_led:C", "esp:GND.1", "yellow", [] ],
+    [ "esp:33", "relay2_led:A", "blue", [] ],
+    [ "relay2_led:C", "esp:GND.1", "yellow", [] ],
+    [ "esp:25", "relay3_led:A", "blue", [] ],
+    [ "relay3_led:C", "esp:GND.1", "yellow", [] ],
+    [ "esp:26", "relay4_led:A", "blue", [] ],
+    [ "relay4_led:C", "esp:GND.1", "yellow", [] ],
+    [ "esp:27", "relay5_led:A", "blue", [] ],
+    [ "relay5_led:C", "esp:GND.1", "yellow", [] ],
+    [ "esp:14", "relay6_led:A", "blue", [] ],
+    [ "relay6_led:C", "esp:GND.1", "yellow", [] ],
+    [ "esp:12", "relay7_led:A", "blue", [] ],
+    [ "relay7_led:C", "esp:GND.1", "yellow", [] ],
+    [ "esp:13", "relay8_led:A", "blue", [] ],
+    [ "relay8_led:C", "esp:GND.1", "yellow", [] ],
+    [ "esp:TX0", "$serialMonitor:RX", "white", [] ],
+    [ "esp:RX0", "$serialMonitor:TX", "white", [] ]
   ],
-  "serialMonitor": {
-    "display": "terminal"
-  },
   "dependencies": {}
-}
- ]
 }
