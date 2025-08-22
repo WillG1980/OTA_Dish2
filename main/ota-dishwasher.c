@@ -217,7 +217,8 @@ void app_main(void) {
   
   gpio_mask_config_outputs(ALL_ACTORS);
   gpio_mask_clear(HEAT | SPRAY | INLET | DRAIN | SOAP); // set all pins to off
-
+_init_LED;
+LED_Toggle("delay_1",LED_ON);
 
   _LOG_I("Booting: %s", boot_partition_cstr());
   _LOG_I("Running: %s", running_partition_cstr());
