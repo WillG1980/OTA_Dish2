@@ -90,38 +90,38 @@
     },
     {
       "type": "wokwi-led",
-      "id": "relay1_led",
+      "id": "R_HEAT_led",
       "top": -147.6,
       "left": -322.6,
-      "attrs": { "color": "yellow", "label": "RELAY1" }
+      "attrs": { "color": "yellow", "label": "R_HEAT" }
     },
     {
       "type": "wokwi-led",
-      "id": "relay2_led",
+      "id": "R_SPRAY_led",
       "top": -147.6,
       "left": -274.6,
-      "attrs": { "color": "yellow", "label": "RELAY2" }
+      "attrs": { "color": "yellow", "label": "R_SPRAY" }
     },
     {
       "type": "wokwi-led",
-      "id": "relay3_led",
+      "id": "R_FILL_led",
       "top": -147.6,
       "left": -226.6,
-      "attrs": { "color": "yellow", "label": "RELAY3" }
+      "attrs": { "color": "yellow", "label": "R_FILL" }
     },
     {
       "type": "wokwi-led",
-      "id": "relay4_led",
+      "id": "R_DRAIN_led",
       "top": -147.6,
       "left": -178.6,
-      "attrs": { "color": "yellow", "label": "RELAY4" }
+      "attrs": { "color": "yellow", "label": "R_DRAIN" }
     },
     {
       "type": "wokwi-led",
-      "id": "relay5_led",
+      "id": "R_SOAP_led",
       "top": -147.6,
       "left": -130.6,
-      "attrs": { "color": "yellow", "label": "RELAY5" }
+      "attrs": { "color": "yellow", "label": "R_SOAP" }
     },
     {
       "type": "wokwi-led",
@@ -168,16 +168,16 @@
     [ "sw_delay:2.r", "esp:16", "orange", [] ],
     [ "esp:23", "sw_qr:1.l", "black", [] ],
     [ "sw_qr:2.r", "esp:5", "orange", [] ],
-    [ "esp:32", "relay1_led:A", "blue", [] ],
-    [ "relay1_led:C", "esp:GND.1", "yellow", [] ],
-    [ "esp:33", "relay2_led:A", "blue", [] ],
-    [ "relay2_led:C", "esp:GND.1", "yellow", [] ],
-    [ "esp:25", "relay3_led:A", "blue", [] ],
-    [ "relay3_led:C", "esp:GND.1", "yellow", [] ],
-    [ "esp:26", "relay4_led:A", "blue", [] ],
-    [ "relay4_led:C", "esp:GND.1", "yellow", [] ],
-    [ "esp:27", "relay5_led:A", "blue", [] ],
-    [ "relay5_led:C", "esp:GND.1", "yellow", [] ],
+    [ "esp:32", "R_HEAT_led:A", "blue", [] ],
+    [ "R_HEAT_led:C", "esp:GND.1", "yellow", [] ],
+    [ "esp:33", "R_SPRAY_led:A", "blue", [] ],
+    [ "R_SPRAY_led:C", "esp:GND.1", "yellow", [] ],
+    [ "esp:25", "R_FILL_led:A", "blue", [] ],
+    [ "R_FILL_led:C", "esp:GND.1", "yellow", [] ],
+    [ "esp:26", "R_DRAIN_led:A", "blue", [] ],
+    [ "R_DRAIN_led:C", "esp:GND.1", "yellow", [] ],
+    [ "esp:27", "R_SOAP_led:A", "blue", [] ],
+    [ "R_SOAP_led:C", "esp:GND.1", "yellow", [] ],
     [ "esp:14", "relay6_led:A", "blue", [] ],
     [ "relay6_led:C", "esp:GND.1", "yellow", [] ],
     [ "esp:12", "relay7_led:A", "blue", [] ],
