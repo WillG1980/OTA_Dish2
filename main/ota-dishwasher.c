@@ -226,7 +226,7 @@ void app_main(void) {
   Matrix_BindWire(10, GPIO_NUM_17);  // status_washing/status_drying anode row
   Matrix_BindWire(12, GPIO_NUM_23);  
 
-
+ 
   _init_LED();
   _start_temp_monitor();
 
