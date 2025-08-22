@@ -231,8 +231,8 @@ static esp_err_t root_get_handler(httpd_req_t *req) {
 }
 
 static esp_err_t action_get_handler(httpd_req_t *req) {
-    char buf[64];
-
+  _LOG_I("ACTION GET received:");
+      char buf[64];
     int qlen = httpd_req_get_url_query_len(req);
     if (qlen <= 0) {
         httpd_resp_send_err(req, HTTPD_400_BAD_REQUEST, "Missing query");
@@ -303,8 +303,7 @@ httpd_handle_t start_webserver(void) {
 
 void stop_webserver(httpd_handle_t server) {
     if (server) httpd_stop(server);
-    /* optional: stop worker
+    
     if (action_task_handle) { vTaskDelete(action_task_handle); action_task_handle = NULL; }
-    if (action_queue)       { vQueueDelete(action_queue);      action_queue = NULL; }
-    */
+    if (action_queue)       { vQueueDelete(action_queue);      action_queue = NULL; }    
 }
