@@ -63,29 +63,29 @@
     {
       "type": "wokwi-pushbutton",
       "id": "sw_start",
-      "top": 150.2,
-      "left": -38.4,
+      "top": -128.2,
+      "left": -86.4,
       "attrs": { "label": "Start" }
     },
     {
       "type": "wokwi-pushbutton",
       "id": "sw_cancel",
-      "top": 150.2,
-      "left": -124.8,
+      "top": -128.2,
+      "left": 0,
       "attrs": { "label": "Cancel" }
     },
     {
       "type": "wokwi-pushbutton",
       "id": "sw_delay",
-      "top": 150.2,
-      "left": -211.2,
+      "top": -128.2,
+      "left": 96,
       "attrs": { "label": "Delay" }
     },
     {
       "type": "wokwi-pushbutton",
       "id": "sw_qr",
-      "top": 150.2,
-      "left": -278.4,
+      "top": -128.2,
+      "left": 182.4,
       "attrs": { "label": "Quick Rinse" }
     },
     {
