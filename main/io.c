@@ -306,7 +306,7 @@ static void matrix_task(void *arg) {
 
       // Activate this row for scanning
       set_gpio_output(rg, SW_ROW_ACTIVE_LEVEL);
-      ets_rom_delay_us(50); // settle
+      esp_rom_delay_us(50); // settle
 
       // Sample each switch on this row
       xSemaphoreTake(s_lock, portMAX_DELAY);
