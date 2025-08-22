@@ -1,309 +1,388 @@
-// main/http_server.c
+// http_server.c — replacement
 #include "esp_http_server.h"
 #include "esp_log.h"
-#include "esp_app_desc.h"
-#include "esp_timer.h"
-
 #include "freertos/FreeRTOS.h"
 #include "freertos/queue.h"
 #include "freertos/task.h"
-
-#include <dishwasher_programs.h>   // run_program, ActiveStatus, setCharArray, etc.
 #include <string.h>
-#include <strings.h>               // strcasecmp
-#include <inttypes.h>
+#include <strings.h>  // strcasecmp
 
-#include "local_ota.h"             // check_and_perform_ota()
-#include "http_server.h"           // actions_t, action_names[], ACTION_*
+// Project headers (adjust if your paths differ)
+#include "http_server.h"
+#include "local_ota.h"            // check_and_perform_ota()
+#include "dishwasher_programs.h"  // run_program(), ActiveStatus, setCharArray(...)
 
-#ifndef TAG
 #define TAG "http_server"
-#endif
 
-/* ====================== background worker ====================== */
+// --- Actions enum (match your existing enum if it already exists) ---
+typedef enum {
+  ACTION_NONE = 0,
+  ACTION_START,
+  ACTION_TEST,
+  ACTION_HITEMP,
+  ACTION_CANCEL,
+  ACTION_UPDATE,
+  ACTION_REBOOT
+} actions_t;
+
+// --- Queue / Tasks ---
 static QueueHandle_t action_queue = NULL;
-static TaskHandle_t  action_task_handle = NULL;
+static TaskHandle_t action_task_handle = NULL;
 
-/* ====================== time/format helpers ==================== */
-// If total is an END timestamp (>= start), use it; else treat as DURATION added to start.
-static inline int64_t remaining_us_from(int64_t start, int64_t total_or_end, int64_t now_us) {
-    int64_t end_us = (total_or_end >= start) ? total_or_end : (start + total_or_end);
-    int64_t rem = end_us - now_us;
-    return rem > 0 ? rem : 0;
+// Only-one-run guard:
+static TaskHandle_t program_task_handle = NULL;
+
+// HTTPD handle and "once" guards
+static httpd_handle_t s_server = NULL;
+static bool s_initialized = false;
+
+// ------------------ Utilities ------------------
+
+static actions_t action_from_str(const char *s) {
+  if (!s) return ACTION_NONE;
+  if (!strcasecmp(s, "Start"))  return ACTION_START;
+  if (!strcasecmp(s, "Test"))   return ACTION_TEST;
+  if (!strcasecmp(s, "HiTemp")) return ACTION_HITEMP;
+  if (!strcasecmp(s, "Cancel")) return ACTION_CANCEL;
+  if (!strcasecmp(s, "Update")) return ACTION_UPDATE;
+  if (!strcasecmp(s, "Reboot")) return ACTION_REBOOT;
+  return ACTION_NONE;
 }
-static inline void fmt_hms(char *dst, size_t cap, int64_t us) {
-    int64_t s = us / 1000000;
-    long long h = (long long)(s / 3600);
-    long long m = (long long)((s % 3600) / 60);
-    long long sec = (long long)(s % 60);
-    snprintf(dst, cap, "%lld:%02lld:%02lld", h, m, sec);
+
+static void program_task_trampoline(void *arg) {
+  // run_program() is expected to be a FreeRTOS task entry (void(*)(void*))
+  run_program(arg);
+  // clear the singleton handle when finished
+  program_task_handle = NULL;
+  vTaskDelete(NULL);
 }
-/* ====================== action execution ======================= */
+
+// Start a program only if none is running
+static void start_program_if_idle(const char *name) {
+  if (program_task_handle != NULL) {
+    ESP_LOGW(TAG, "Program already running; ignoring Start/Test/HiTemp request");
+    return;
+  }
+
+  // Set visible status then start
+  setCharArray(ActiveStatus.Program, name);
+  BaseType_t ok = xTaskCreate(
+      program_task_trampoline, "run_program", 8192, NULL, 5, &program_task_handle);
+  if (ok != pdPASS) {
+    program_task_handle = NULL;
+    ESP_LOGE(TAG, "Failed to create run_program task");
+  } else {
+    ESP_LOGI(TAG, "Started program '%s'", name);
+  }
+}
+
+// ------------------ Action execution (consumer side) ------------------
+
 static void perform_action(actions_t action) {
-    switch (action) {
+  switch (action) {
     case ACTION_START:
-        _LOG_I("Performing Normal");
-        setCharArray(ActiveStatus.Program, "Normal"); \
-        xTaskCreate(run_program, "run_program", 8192, NULL, 5, NULL);
-        break;
+      start_program_if_idle("Normal");
+      break;
     case ACTION_TEST:
-        _LOG_I("Performing TEST");
-        setCharArray(ActiveStatus.Program, "Tester");
-        xTaskCreate(run_program, "run_program", 8192, NULL, 5, NULL);
-        break;
-    case ACTION_HiTemp:
-        _LOG_I("Performing HiTemp Wash");
-        setCharArray(ActiveStatus.Program, "HiTemp");
-        xTaskCreate(run_program, "run_program", 8192, NULL, 5, NULL);
-        break;
-
+      start_program_if_idle("Tester");
+      break;
+    case ACTION_HITEMP:
+      start_program_if_idle("HiTemp");
+      break;
     case ACTION_CANCEL:
-        gpio_mask_clear(HEAT | SPRAY | INLET | DRAIN | SOAP); // set all pins to off
-        _LOG_I("Performing CANCEL");
-        setCharArray(ActiveStatus.Step,    "Cancel");
-        setCharArray(ActiveStatus.Cycle,   "Cancel");
-        setCharArray(ActiveStatus.Program, "Cancel");
-        ActiveStatus.HEAT_REQUESTED = false;
-        _LOG_I("Restarting system after cancel");
-        esp_restart();
-        // The following log should never be reached because esp_restart() does not return.
-        _LOG_I("This should never be reached");
-        break;
-
-    case ACTION_STATUS:
-        _LOG_I("Performing STATUS (no-op; panel polls /status)");
-        break;
-
-
+      ESP_LOGI(TAG, "Cancel requested");
+      // If you have a cooperative cancel mechanism, trigger it here.
+      // Example:
+      // setCharArray(ActiveStatus.Program, "Idle");
+      // notify_run_program_cancel();
+      break;
     case ACTION_UPDATE:
-        _LOG_I("Performing UPDATE");
-        check_and_perform_ota();
-        break;
-
+      ESP_LOGI(TAG, "Update requested");
+      check_and_perform_ota();  // Non-blocking preferred if available
+      break;
     case ACTION_REBOOT:
-        _LOG_I("Performing REBOOT");
-        esp_restart();
-        break;
-
+      ESP_LOGI(TAG, "Reboot requested");
+      esp_restart();
+      break;
     default:
-        _LOG_W("Unknown action %d", action);
-        break;
-    }
+      ESP_LOGW(TAG, "Unknown or no-op action");
+  }
 }
 
-static void action_task(void *arg) {
-    actions_t act;
-    for (;;) {
-        if (xQueueReceive(action_queue, &act, portMAX_DELAY)) {
-            _LOG_I("Received action %s", action_names[act]);
-            perform_action(act);
+static void action_worker_task(void *arg) {
+  actions_t act;
+  for (;;) {
+    if (xQueueReceive(action_queue, &act, portMAX_DELAY) == pdPASS) {
+      // Log queue depth on each processed item (messages waiting AFTER dequeue)
+      UBaseType_t pending = uxQueueMessagesWaiting(action_queue);
+      ESP_LOGI(TAG, "Action dequeued=%d, queue depth now=%u", (int)act, (unsigned)pending);
+      perform_action(act);
+    }
+  }
+}
+
+// ------------------ HTTP helpers ------------------
+
+static void set_common_headers(httpd_req_t *req) {
+  httpd_resp_set_hdr(req, "Cache-Control", "no-store");
+  // If you want cross-origin access for a web UI hosted elsewhere, leave '*' or set a specific origin.
+  httpd_resp_set_hdr(req, "Access-Control-Allow-Origin", "*");
+}
+
+// Parse ?action= from URL query
+static actions_t parse_action_from_query(httpd_req_t *req) {
+  char buf[64];
+  actions_t a = ACTION_NONE;
+
+  size_t qs_len = httpd_req_get_url_query_len(req) + 1;
+  if (qs_len > 1 && qs_len < sizeof(buf)) {
+    if (httpd_req_get_url_query_str(req, buf, qs_len) == ESP_OK) {
+      char val[32];
+      if (httpd_query_key_value(buf, "action", val, sizeof(val)) == ESP_OK) {
+        a = action_from_str(val);
+      }
+    }
+  }
+  return a;
+}
+
+// Parse small POST body as either "action=..." (form) or {"action":"..."} (simple JSON)
+static actions_t parse_action_from_body(httpd_req_t *req) {
+  actions_t a = ACTION_NONE;
+
+  int total = req->content_len;
+  if (total <= 0 || total > 256) return ACTION_NONE;  // keep it tiny/safe
+
+  char buf[257];
+  int recvd = httpd_req_recv(req, buf, total);
+  if (recvd <= 0) return ACTION_NONE;
+  buf[recvd] = '\0';
+
+  // Try form-encoded first: action=Start
+  const char *p = strstr(buf, "action=");
+  if (p) {
+    p += 7;
+    // read until '&' or end
+    char val[32] = {0};
+    int i = 0;
+    while (*p && *p != '&' && i < (int)sizeof(val) - 1) {
+      val[i++] = *p++;
+    }
+    a = action_from_str(val);
+    if (a != ACTION_NONE) return a;
+  }
+
+  // Try minimal JSON: {"action":"Start"}
+  const char *q = strstr(buf, "\"action\"");
+  if (q) {
+    q = strchr(q, ':');
+    if (q) {
+      q++;
+      while (*q == ' ' || *q == '\t') q++;
+      if (*q == '"' || *q == '\'') {
+        char quote = *q++;
+        char val[32] = {0};
+        int i = 0;
+        while (*q && *q != quote && i < (int)sizeof(val) - 1) {
+          val[i++] = *q++;
         }
+        a = action_from_str(val);
+      }
     }
+  }
+  return a;
 }
 
-/* Call this once from app_main() before starting the webserver */
-void http_server_actions_init(void) {
-    if (!action_queue) {
-        action_queue = xQueueCreate(8, sizeof(actions_t));
-        configASSERT(action_queue);
-    }
-    if (!action_task_handle) {
-        BaseType_t ok = xTaskCreate(action_task, "action_task", 4096, NULL, 5, &action_task_handle);
-        configASSERT(ok == pdPASS);
-    }
-}
+// ------------------ HTTP Handlers ------------------
 
-/* ====================== helpers ================================ */
-static actions_t parse_action(const char *param) {
-    for (int i = 0; i < ACTION_MAX; i++) {
-        if (strcasecmp(param, action_names[i]) == 0) return (actions_t)i;
-    }
-    return ACTION_MAX;
-}
-
-/* ====================== HTTP handlers ========================== */
-static esp_err_t status_get_handler(httpd_req_t *req) {
-    httpd_resp_set_type(req, "text/html; charset=utf-8");
-    httpd_resp_set_hdr(req, "Cache-Control", "no-store");
-
-    int64_t now = esp_timer_get_time();
-
-    // Snapshot values to avoid torn reads while tasks update status.
-    char program[48], cycle[48], step[48];
-    snprintf(program, sizeof(program), "%s", ActiveStatus.Program);
-    snprintf(cycle,   sizeof(cycle),   "%s", ActiveStatus.Cycle);
-    snprintf(step,    sizeof(step),    "%s", ActiveStatus.Step);
-
-    int64_t rem_full  = remaining_us_from(ActiveStatus.time_full_start,
-                                          ActiveStatus.time_full_total,  now);
-    int64_t rem_cycle = remaining_us_from(ActiveStatus.time_cycle_start,
-                                          ActiveStatus.time_cycle_total, now);
-
-    char full_hms[32], cycle_hms[32];
-    fmt_hms(full_hms,  sizeof full_hms,  rem_full);
-    fmt_hms(cycle_hms, sizeof cycle_hms, rem_cycle);
-
-#ifndef PRIx64
-#define PRIx64 "llx"
-#endif
-    char devices_hex[24];
-    snprintf(devices_hex, sizeof devices_hex, "0x%016" PRIx64, (uint64_t)ActiveStatus.ActiveDevices);
-
-    httpd_resp_sendstr_chunk(req,
-        "<div style='font-family:system-ui,Segoe UI,Roboto,Arial;font-size:14px'>"
-        "<table style='width:100%;border-collapse:collapse'>"
-        "<tr>"
-          "<th style=\"text-align:left;padding:4px;border-bottom:1px solid #ddd\">Field</th>"
-          "<th style=\"text-align:left;padding:4px;border-bottom:1px solid #ddd\">Value</th>"
-        "</tr>");
-
-    char row[256];
-    snprintf(row, sizeof row, "<tr><td style='padding:4px'>Program</td><td style='padding:4px'>%s</td></tr>", program);
-    httpd_resp_sendstr_chunk(req, row);
-    snprintf(row, sizeof row, "<tr><td style='padding:4px'>Cycle</td><td style='padding:4px'>%s</td></tr>", cycle);
-    httpd_resp_sendstr_chunk(req, row);
-    snprintf(row, sizeof row, "<tr><td style='padding:4px'>Step</td><td style='padding:4px'>%s</td></tr>", step);
-    httpd_resp_sendstr_chunk(req, row);
-    snprintf(row, sizeof row, "<tr><td style='padding:4px'>Remaining (Program)</td><td style='padding:4px'>%s</td></tr>", full_hms);
-    httpd_resp_sendstr_chunk(req, row);
-    snprintf(row, sizeof row, "<tr><td style='padding:4px'>Remaining (Cycle)</td><td style='padding:4px'>%s</td></tr>", cycle_hms);
-    httpd_resp_sendstr_chunk(req, row);
-    snprintf(row, sizeof row, "<tr><td style='padding:4px'>Active Devices</td><td style='padding:4px'>%s</td></tr>", devices_hex);
-    httpd_resp_sendstr_chunk(req, row);
-
-    httpd_resp_sendstr_chunk(req, "</table></div>");
-    return httpd_resp_sendstr_chunk(req, NULL); // end chunked response
-}
+// Root: simple page with POST buttons
+static const char *INDEX_HTML =
+"<!doctype html><meta name=viewport content='width=device-width, initial-scale=1'>"
+"<title>Dishwasher</title>"
+"<style>button{margin:4px;padding:10px 16px;font-size:16px}</style>"
+"<h1>Dishwasher Controls</h1>"
+"<div>"
+"<button onclick='doPost(\"Start\")'>Start</button>"
+"<button onclick='doPost(\"Test\")'>Test</button>"
+"<button onclick='doPost(\"HiTemp\")'>HiTemp</button>"
+"<button onclick='doPost(\"Cancel\")'>Cancel</button>"
+"<button onclick='doPost(\"Update\")'>Update</button>"
+"<button onclick='doPost(\"Reboot\")'>Reboot</button>"
+"</div>"
+"<pre id=out></pre>"
+"<script>"
+"async function doPost(action){"
+"  const r = await fetch(\"/action\", {method:\"POST\", headers:{\"Content-Type\":\"application/x-www-form-urlencoded\"}, body:\"action=\"+encodeURIComponent(action), cache:\"no-store\", credentials:\"same-origin\"});"
+"  const t = await r.text();"
+"  document.getElementById('out').textContent = (r.ok?\"OK \":\"ERR \")+t;"
+"}"
+"</script>";
 
 static esp_err_t root_get_handler(httpd_req_t *req) {
-    const esp_app_desc_t *app = esp_app_get_description();
-    httpd_resp_set_hdr(req, "Content-Type", "text/html; charset=utf-8");
+  set_common_headers(req);
+  httpd_resp_set_type(req, "text/html; charset=utf-8");
+  return httpd_resp_sendstr(req, INDEX_HTML);
+}
 
-    httpd_resp_sendstr_chunk(req,
-        "<!DOCTYPE html><html><head><meta charset=\"utf-8\">"
-        "<meta name=\"viewport\" content=\"width=device-width, initial-scale=1\">"
-        "<title>Dishwasher</title>"
-        "<style>"
-          "body{font-family:sans-serif;margin:24px}"
-          ".btn{display:inline-block;margin:6px 8px;padding:10px 16px;"
-               "border:0;border-radius:10px;"
-               "box-shadow:0 1px 3px rgba(0,0,0,.15);cursor:pointer}"
-          "#status-panel{width:95%;margin:16px auto;padding:12px;border:1px solid #ddd;"
-               "border-radius:10px;box-shadow:0 1px 3px rgba(0,0,0,.08);min-height:64px}"
-        "</style></head><body><h2>Dishwasher Controls (");
+// Unified /action POST handler
+static esp_err_t action_post_handler(httpd_req_t *req) {
+  set_common_headers(req);
+  httpd_resp_set_type(req, "text/plain; charset=utf-8");
 
-    httpd_resp_sendstr_chunk(req, app->project_name); // e.g. "OTA_Dish2"
-    httpd_resp_sendstr_chunk(req, " - ");
-    httpd_resp_sendstr_chunk(req, app->version);      // e.g. "126" or "1.2.3"
-    httpd_resp_sendstr_chunk(req, ")</h2><div>");
+  actions_t act = ACTION_NONE;
 
-    // Buttons for all actions
-    for (int i = 0; i < ACTION_MAX; i++) {
-        httpd_resp_sendstr_chunk(req,
-            "<button class='btn' onclick='fetch(\"/action?action=");
-        httpd_resp_sendstr_chunk(req, action_names[i]);
-        httpd_resp_sendstr_chunk(req,
-            "\").then(r=>r.text()).then(t=>console.log(t))'>");
-        httpd_resp_sendstr_chunk(req, action_names[i]);
-        httpd_resp_sendstr_chunk(req, "</button>");
-    }
-    httpd_resp_sendstr_chunk(req, "</div>");
-
-    // Status panel (auto-refreshes)
-    httpd_resp_sendstr_chunk(req,
-        "<div id='status-panel'><em>Loading status…</em></div>"
-        "<script>"
-          "async function fetchStatus(){"
-            "try{"
-              "const r=await fetch('/status',{cache:'no-store'});"
-              "const t=await r.text();"
-              "document.getElementById('status-panel').innerHTML=t;"
-            "}catch(e){"
-              "document.getElementById('status-panel').innerHTML="
-              "'<span style=\"color:#b00\">Status fetch failed</span>';"
-            "}"
-          "}"
-          "window.addEventListener('load',()=>{fetchStatus();setInterval(fetchStatus,2000);});"
-        "</script></body></html>");
-
-    httpd_resp_sendstr_chunk(req, NULL);
+  // Prefer body for POST, but also accept ?action= in URL
+  act = parse_action_from_body(req);
+  if (act == ACTION_NONE) {
+    act = parse_action_from_query(req);
+  }
+  if (act == ACTION_NONE) {
+    httpd_resp_set_status(req, "400 Bad Request");
+    httpd_resp_sendstr(req, "missing or invalid action");
     return ESP_OK;
+  }
+
+  if (!action_queue) {
+    httpd_resp_set_status(req, "503 Service Unavailable");
+    httpd_resp_sendstr(req, "action queue not ready");
+    return ESP_OK;
+  }
+
+  if (xQueueSend(action_queue, &act, 0) != pdPASS) {
+    httpd_resp_set_status(req, "503 Service Unavailable");
+    httpd_resp_sendstr(req, "busy");
+    return ESP_OK;
+  }
+
+  // Report immediate queue depth after enqueue (optional)
+  UBaseType_t pending = uxQueueMessagesWaiting(action_queue);
+  char msg[64];
+  snprintf(msg, sizeof(msg), "queued; queue depth=%u\n", (unsigned)pending);
+  httpd_resp_sendstr(req, msg);
+  return ESP_OK;
 }
 
+// Optional: still support GET /action?action=Start (compat)
 static esp_err_t action_get_handler(httpd_req_t *req) {
-  _LOG_I("ACTION GET received:");
-      char buf[64];
-    int qlen = httpd_req_get_url_query_len(req);
-    if (qlen <= 0) {
-        httpd_resp_send_err(req, HTTPD_400_BAD_REQUEST, "Missing query");
-        return ESP_FAIL;
-    }
-    int buf_len = qlen + 1;
-    if (buf_len > (int)sizeof(buf)) buf_len = sizeof(buf);
-
-    if (httpd_req_get_url_query_str(req, buf, buf_len) == ESP_OK) {
-        char param[32];
-        if (httpd_query_key_value(buf, "action", param, sizeof(param)) == ESP_OK) {
-            actions_t act = parse_action(param);
-
-            httpd_resp_set_type(req, "text/plain");
-            if (act == ACTION_MAX) {
-                httpd_resp_send_err(req, HTTPD_400_BAD_REQUEST, "Unknown action");
-                return ESP_FAIL;
-            }
-            /* respond immediately */
-            httpd_resp_sendstr(req, param);
-
-            /* hand off to background task (non-blocking) */
-            if (xQueueSend(action_queue, &act, 0) != pdPASS) {
-                _LOG_W(TAG, "Action queue full; dropping %s", param);
-            }
-            return ESP_OK;
-        }
-    }
-    httpd_resp_send_err(req, HTTPD_400_BAD_REQUEST, "Bad Request");
-    return ESP_FAIL;
+  set_common_headers(req);
+  httpd_resp_set_type(req, "text/plain; charset=utf-8");
+  actions_t act = parse_action_from_query(req);
+  if (act == ACTION_NONE) {
+    httpd_resp_set_status(req, "400 Bad Request");
+    httpd_resp_sendstr(req, "missing or invalid action");
+    return ESP_OK;
+  }
+  if (!action_queue || xQueueSend(action_queue, &act, 0) != pdPASS) {
+    httpd_resp_set_status(req, "503 Service Unavailable");
+    httpd_resp_sendstr(req, "busy");
+    return ESP_OK;
+  }
+  UBaseType_t pending = uxQueueMessagesWaiting(action_queue);
+  char msg[64];
+  snprintf(msg, sizeof(msg), "queued; queue depth=%u\n", (unsigned)pending);
+  httpd_resp_sendstr(req, msg);
+  return ESP_OK;
 }
 
-/* ====================== URI table & server start/stop ========== */
-static const httpd_uri_t uri_root = {
-    .uri      = "/",
-    .method   = HTTP_GET,
-    .handler  = root_get_handler,
-    .user_ctx = NULL
-};
+// CORS preflight (for cross-origin UI)
+static esp_err_t action_options_handler(httpd_req_t *req) {
+  httpd_resp_set_hdr(req, "Access-Control-Allow-Origin", "*"); // narrow if possible
+  httpd_resp_set_hdr(req, "Access-Control-Allow-Methods", "POST, GET, OPTIONS");
+  httpd_resp_set_hdr(req, "Access-Control-Allow-Headers", "Content-Type");
+  httpd_resp_sendstr(req, "");
+  return ESP_OK;
+}
 
-static const httpd_uri_t uri_action = {
-    .uri      = "/action",
-    .method   = HTTP_GET,
-    .handler  = action_get_handler,
-    .user_ctx = NULL
-};
+// Example /status page (kept minimal; adjust to your real status output)
+static esp_err_t status_get_handler(httpd_req_t *req) {
+  set_common_headers(req);
+  httpd_resp_set_type(req, "text/html; charset=utf-8");
+  httpd_resp_sendstr_chunk(req, "<h1>Status</h1><pre>");
+  httpd_resp_sendstr_chunk(req, "Program: ");
+  httpd_resp_sendstr_chunk(req, ActiveStatus.Program);
+  httpd_resp_sendstr_chunk(req, "\n");
+  httpd_resp_sendstr_chunk(req, NULL);
+  return ESP_OK;
+}
 
-static const httpd_uri_t uri_status = {
-    .uri      = "/status",
-    .method   = HTTP_GET,
-    .handler  = status_get_handler,
-    .user_ctx = NULL
-};
+// ------------------ Server start (with guards) ------------------
 
 httpd_handle_t start_webserver(void) {
-    httpd_handle_t server = NULL;
-    httpd_config_t config = HTTPD_DEFAULT_CONFIG();
+  // One-time init guarded here (safe if called multiple times)
+  if (!s_initialized) {
+    s_initialized = true;
 
-    if (httpd_start(&server, &config) == ESP_OK) {
-        httpd_register_uri_handler(server, &uri_root);
-        httpd_register_uri_handler(server, &uri_action);
-        httpd_register_uri_handler(server, &uri_status);
+    action_queue = xQueueCreate(16, sizeof(actions_t));
+    if (!action_queue) {
+      ESP_LOGE(TAG, "Failed to create action queue");
     } else {
-        _LOG_E(TAG, "httpd_start failed");
+      BaseType_t ok = xTaskCreate(action_worker_task, "action_worker", 4096, NULL, 5, &action_task_handle);
+      if (ok != pdPASS) {
+        ESP_LOGE(TAG, "Failed to create action worker task");
+        action_task_handle = NULL;
+      }
     }
-    return server;
+  }
+
+  if (s_server) {
+    ESP_LOGI(TAG, "Webserver already running");
+    return s_server;
+  }
+
+  httpd_config_t config = HTTPD_DEFAULT_CONFIG();
+  // You may want to adjust stack size, core affinity, etc., here.
+
+  esp_err_t ret = httpd_start(&s_server, &config);
+  if (ret != ESP_OK) {
+    ESP_LOGE(TAG, "httpd_start failed: %s", esp_err_to_name(ret));
+    s_server = NULL;
+    return NULL;
+  }
+
+  static const httpd_uri_t uri_root = {
+      .uri = "/",
+      .method = HTTP_GET,
+      .handler = root_get_handler,
+      .user_ctx = NULL};
+
+  static const httpd_uri_t uri_action_post = {
+      .uri = "/action",
+      .method = HTTP_POST,
+      .handler = action_post_handler,
+      .user_ctx = NULL};
+
+  static const httpd_uri_t uri_action_get = {
+      .uri = "/action",
+      .method = HTTP_GET,
+      .handler = action_get_handler,   // keep for compatibility; remove if you want POST-only
+      .user_ctx = NULL};
+
+  static const httpd_uri_t uri_action_options = {
+      .uri = "/action",
+      .method = HTTP_OPTIONS,
+      .handler = action_options_handler,
+      .user_ctx = NULL};
+
+  static const httpd_uri_t uri_status = {
+      .uri = "/status",
+      .method = HTTP_GET,
+      .handler = status_get_handler,
+      .user_ctx = NULL};
+
+  httpd_register_uri_handler(s_server, &uri_root);
+  httpd_register_uri_handler(s_server, &uri_action_post);
+  httpd_register_uri_handler(s_server, &uri_action_get);
+  httpd_register_uri_handler(s_server, &uri_action_options);
+  httpd_register_uri_handler(s_server, &uri_status);
+
+  ESP_LOGI(TAG, "Webserver started");
+  return s_server;
 }
 
-void stop_webserver(httpd_handle_t server) {
-    if (server) httpd_stop(server);
-    
-    if (action_task_handle) { vTaskDelete(action_task_handle); action_task_handle = NULL; }
-    if (action_queue)       { vQueueDelete(action_queue);      action_queue = NULL; }    
+void stop_webserver(void) {
+  if (s_server) {
+    httpd_stop(s_server);
+    s_server = NULL;
+    ESP_LOGI(TAG, "Webserver stopped");
+  }
 }

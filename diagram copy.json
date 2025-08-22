@@ -125,8 +125,8 @@
     }
   ],
   "connections": [
-    [ "esp:TX", "$serialMonitor:RX", "black", [] ],
-    [ "esp:RX", "$serialMonitor:TX", "black", [] ],
+    [ "esp:TX0", "$serialMonitor:RX", "black", [] ],
+    [ "esp:RX0", "$serialMonitor:TX", "black", [] ],
     [ "esp:17", "led_washing:A", "red", [] ],
     [ "led_washing:C", "esp:GND.1", "green", [] ],
     [ "esp:18", "led_sensing:A", "red", [] ],
