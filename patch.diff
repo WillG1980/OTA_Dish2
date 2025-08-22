@@ -1,0 +1,35 @@
+--- a/main/io.c
++++ b/main/io.c
+@@
+-#include "freertos/FreeRTOS.h"
+-#include "freertos/task.h"
++#include "freertos/FreeRTOS.h"
++#include "freertos/task.h"
++#include "esp_rom_sys.h"   // esp_rom_delay_us
+ 
+@@
+-void matrix_task(void *arg) {
+-  // ... old implementation that loops with ets_delay_us or tight loops ...
+-  for (;;) {
+-    // existing row/column driving logic here, probably with long micro-delays
+-  }
+-}
++void matrix_task(void *arg) {
++  // ~1 kHz panel refresh; tune if you need slower/faster
++  const TickType_t period = pdMS_TO_TICKS(1);
++  TickType_t last = xTaskGetTickCount();
++
++  for (;;) {
++    for (int row = 0; row < NUM_ROWS; ++row) {
++      select_row(row);
++      // small settle for analog/digital lines (keep this SHORT)
++      esp_rom_delay_us(20);           // OK: tens of µs, not ms
++      drive_columns_for_row(row);     // your existing column drive
++
++      // if per-row work is heavy, yield occasionally:
++      if ((row & 0x3) == 0) { taskYIELD(); }
++    }
++    // precise, scheduler-friendly cadence; guarantees IDLE gets time
++    vTaskDelayUntil(&last, period);
++  }
++}
