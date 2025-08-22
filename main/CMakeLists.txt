@@ -10,6 +10,7 @@ idf_component_register(
         "http_server.c"
         "dishwasher_programs.c"
         "io.c"
+        "analog.c"
     INCLUDE_DIRS
         "."
 )
