@@ -102,17 +102,12 @@ void run_program(void *pvParameters) {
   int64_t cycle_run_time = 0;
   ActiveStatus.time_full_start = get_unix_epoch();
   ActiveStatus.time_full_total = get_unix_epoch() + ActiveStatus.Active_Program.max_time;
-  /* Move this under _test_
-  _LOG_I("Activating all pins");
-  gpio_mask_set(HEAT | SPRAY | INLET | DRAIN ); // set all pins to on for breif test (except SOAP)
-  vTaskDelay(pdMS_TO_TICKS(3000));
-    _LOG_I("DE-Activating all pins");
-  gpio_mask_clear(HEAT | SPRAY | INLET | DRAIN | SOAP); // set all pins to off
-  vTaskDelay(pdMS_TO_TICKS(3000));
-*/
+
   for (size_t l = 0; l < ActiveStatus.Active_Program.num_lines; l++) {
     ProgramLineStruct *Line = &ActiveStatus.Active_Program.lines[l];
     gpio_mask_clear(HEAT | SPRAY | INLET | DRAIN | SOAP); // set all pins to off
+
+
     old_cycle = Line->name_cycle;
     int TTR =  (Line->max_time > Line->min_time) ? Line->max_time : Line->min_time;
     time_t target_time = get_unix_epoch() + TTR ;
@@ -123,7 +118,7 @@ void run_program(void *pvParameters) {
     gpio_mask_set(Line->gpio_mask); // set all pins to off
     vTaskDelay(pdMS_TO_TICKS(5 * SEC)); // run for 5 seconds minimum
 
-    for (; TTR > 0; TTR -= 5000) 
+    for (; TTR > 0; TTR -= 5) 
         {
           gpio_mask_set(Line->gpio_mask); // set all pins to off
           _LOG_D("\t%s:%s\t%d",Line->name_cycle,Line->name_step,TTR);
