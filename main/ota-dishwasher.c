@@ -211,11 +211,17 @@ void init_status(void) {
   ActiveStatus.time_elapsed = 0;
   _LOG_I("Ending Function");
 }
-gpio_mask_config_outputs(ALL_ACTORS);
-gpio_mask_clear_outputs(ALL_ACTORS);
 // app_main
-httpd_handle_t server = NULL;
+//httpd_handle_t server = NULL;
+
+
+
 void app_main(void) {
+
+gpio_mask_config_outputs(ALL_ACTORS);
+gpio_mask_clear// app_main
+
+
   _LOG_I("Booting: %s", boot_partition_cstr());
   _LOG_I("Running: %s", running_partition_cstr());
   esp_log_level_set("*", ESP_LOG_DEBUG);
@@ -236,7 +242,7 @@ void app_main(void) {
 
     if (strcmp(ActiveStatus.Cycle, "fini") == 0) {
       log_uptime_hms();
-      enter_ship_mode_forever();//load is finished, shut down
+      enter_ship_mode_forever();//load is finished, shut
     }
     vTaskDelay(pdMS_TO_TICKS(10000));
   }
