@@ -18,7 +18,7 @@ add_compile_options($<$<COMPILE_LANGUAGE:C>:-Wno-deprecated-declarations>)
 add_compile_options($<$<COMPILE_LANGUAGE:CXX>:-Wno-deprecated-declarations>)
 
 add_compile_options($<$<COMPILE_LANGUAGE:C>:-Wno-discarded-qualifiers>)
-add_compile_options($<$<COMPILE_LANGUAGE:CXX>:-Wno-discarded-qualifiers>)
+ 
 
 include($ENV{IDF_PATH}/tools/cmake/project.cmake)
 
