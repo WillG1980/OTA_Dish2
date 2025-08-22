@@ -13,7 +13,7 @@
 #define APP_VERSION VERSION
 #endif
 
- 
+#include "io.h" 
 #include "driver/gpio.h"
 #include "esp_crt_bundle.h"
 #include "esp_err.h"
@@ -128,6 +128,9 @@ static inline void IRAM_ATTR gpio_mask_toggle(uint64_t mask) {
 #define SENSOR_ENABLE (BIT64(GPIO_NUM_18))
 #define CLEANLIGHT (BIT64(GPIO_NUM_19))
 #define LIGHT3 (BIT64(GPIO_NUM_21))
+
+
+
 
 static const uint64_t ALL_ACTORS = HEAT | SPRAY | INLET | DRAIN | SOAP;
 

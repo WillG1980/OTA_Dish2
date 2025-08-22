@@ -9,6 +9,7 @@ idf_component_register(
         "logger.c"
         "http_server.c"
         "dishwasher_programs.c"
+        "io.c"
     INCLUDE_DIRS
         "."
 )
