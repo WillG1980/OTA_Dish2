@@ -15,6 +15,9 @@
 #include "esp_log.h"
 #include "esp_check.h"
 #include "esp_rom_sys.h" // ets_delay_us
+#include "esp_log.h"
+#include "esp_check.h"
+#include "esp_rom_sys.h" // esp_rom_delay_us
 
 #define TAG "panel_matrix"
 
@@ -281,7 +284,7 @@ static void matrix_task(void *arg) {
       xSemaphoreGive(s_lock);
 
       // Hold briefly for visibility
-      ets_delay_us(500); // ~0.5 ms per row; adjust as needed
+      ets_rom_delay_us(500); // ~0.5 ms per row; adjust as needed
 
       // Deactivate row and idle GPIO columns
       set_gpio_output(rg, led_row_idle);
@@ -303,7 +306,7 @@ static void matrix_task(void *arg) {
 
       // Activate this row for scanning
       set_gpio_output(rg, SW_ROW_ACTIVE_LEVEL);
-      ets_delay_us(50); // settle
+      ets_rom_delay_us(50); // settle
 
       // Sample each switch on this row
       xSemaphoreTake(s_lock, portMAX_DELAY);
