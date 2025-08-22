@@ -31,7 +31,7 @@
 #include <stdlib.h>
 #include <string.h>
 
-// #include "analog.h"
+#include "analog.h"
 #include "buttons.h"
 #include "dishwasher_programs.h"
 #include "driver/gpio.h"
