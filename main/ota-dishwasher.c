@@ -214,6 +214,11 @@ void init_status(void) {
 // app_main
 httpd_handle_t server = NULL;
 void app_main(void) {
+  
+  gpio_mask_config_outputs(ALL_ACTORS);
+  gpio_mask_clear(HEAT | SPRAY | INLET | DRAIN | SOAP); // set all pins to off
+
+
   _LOG_I("Booting: %s", boot_partition_cstr());
   _LOG_I("Running: %s", running_partition_cstr());
   esp_log_level_set("*", ESP_LOG_DEBUG);
