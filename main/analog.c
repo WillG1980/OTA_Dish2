@@ -1,111 +1,183 @@
-#include "analog.h"
-#include "driver/adc.h"
-#include "esp_adc/adc_oneshot.h"
+// analog_temp_monitor.c (or merge into your analog.c)
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
 #include "esp_log.h"
-#include <math.h>
-#include <limits.h>
+#include "esp_err.h"
+#include "esp_adc/adc_oneshot.h"
 #include <string.h>
-#include "analog.h"
-#include "buttons.h"
-#include "dishwasher_programs.h"
-#include "local_ota.h"   // <- use headers, not .c
-#include "local_time.h"
-#include "local_wifi.h"  // <- use headers, not .c
+#include <math.h>
+#include <stdint.h>
 
+// ---- Your logging macro style ----
+#ifndef TAG
+#define TAG "ANALOG"
+#endif
+#ifndef _LOG_I
+#define _LOG_I(TAG_, fmt, ...) ESP_LOGI(TAG_, fmt, ##__VA_ARGS__)
+#endif
+#ifndef _LOG_W
+#define _LOG_W(TAG_, fmt, ...) ESP_LOGW(TAG_, fmt, ##__VA_ARGS__)
+#endif
+#ifndef _LOG_E
+#define _LOG_E(TAG_, fmt, ...) ESP_LOGE(TAG_, fmt, ##__VA_ARGS__)
+#endif
 
-#define ADC_ATTEN ADC_ATTEN_DB_11
-#define ADC_BIT_WIDTH ADC_BITWIDTH_12
-#define ADC_CHANNEL_7 ADC_CHANNEL_7
-#define LOW_LIMIT 140
-#define _HIGH_LIMIT 150
+// ---- Configuration ----
+#define TEMP_ADC_UNIT        ADC_UNIT_1
+#define TEMP_ADC_CH          ADC_CHANNEL_6     // GPIO34 = ADC1_CH6
+#define TEMP_ADC_ATTEN       ADC_ATTEN_DB_11   // up to ~3.3V
+#define SAMPLE_PERIOD_MS     100               // 10 Hz
+#define WINDOW_MS            60000             // 60 s rolling window
+#define LOG_EVERY_MS         30000             // log every 30 s
 
-static adc_oneshot_unit_handle_t adc1_handle;
-static adc_oneshot_unit_init_cfg_t init_config = {
-    .unit_id = ADC_UNIT_1,
-};
+// Buffer sizing: at 10 Hz for 60 s -> 600 samples
+#define BUF_CAP              (WINDOW_MS / SAMPLE_PERIOD_MS + 8) // a bit of slack
 
-void init_adc() {
-  adc_oneshot_new_unit(&init_config, &adc1_handle);
-  adc_oneshot_chan_cfg_t adc_channel_config = {
-      .atten = ADC_ATTEN,
-      .bitwidth = ADC_BITWIDTH_DEFAULT,
+typedef struct {
+  uint32_t ts_ms;  // sample timestamp (ms since boot)
+  int raw;         // raw ADC code
+} sample_t;
+
+static adc_oneshot_unit_handle_t s_adc = NULL;
+static TaskHandle_t s_task = NULL;
+static volatile bool s_running = false;
+static sample_t s_buf[BUF_CAP];
+static int s_head = 0;
+static int s_count = 0;
+
+// ---- Time helpers ----
+static inline uint32_t now_ms(void) {
+  return (uint32_t)(xTaskGetTickCount() * portTICK_PERIOD_MS);
+}
+
+// ---- Ring buffer push ----
+static inline void push_sample(uint32_t ts_ms, int raw) {
+  s_buf[s_head].ts_ms = ts_ms;
+  s_buf[s_head].raw   = raw;
+  s_head = (s_head + 1) % BUF_CAP;
+  if (s_count < BUF_CAP) {
+    s_count++;
+  } else {
+    // overwrite oldest; count stays at capacity
+  }
+}
+
+// ---- Compute recency-weighted average over last WINDOW_MS ----
+// Weight each sample linearly by recency within the window:
+//   w = (sample_ts - (now - WINDOW_MS)) / WINDOW_MS   (clamped to 0..1)
+static float weighted_avg_raw_last_window(uint32_t now) {
+  if (s_count == 0) return NAN;
+
+  const uint32_t window_start = (now > WINDOW_MS) ? (now - WINDOW_MS) : 0;
+  double wsum = 0.0;
+  double xsum = 0.0;
+
+  // iterate newest->oldest up to buffer size
+  for (int i = 0; i < s_count; ++i) {
+    int idx = (s_head - 1 - i);
+    if (idx < 0) idx += BUF_CAP;
+    const sample_t *s = &s_buf[idx];
+
+    if (s->ts_ms < window_start) break; // older than window, done
+
+    double w = (double)(s->ts_ms - window_start) / (double)WINDOW_MS;
+    if (w < 0.0) w = 0.0;
+    if (w > 1.0) w = 1.0;
+    wsum += w;
+    xsum += w * (double)s->raw;
+  }
+
+  if (wsum <= 0.0) return NAN;
+  return (float)(xsum / wsum);
+}
+
+// ---- ADC init ----
+static esp_err_t init_adc_oneshot(void) {
+  if (s_adc) return ESP_OK;
+
+  adc_oneshot_unit_init_cfg_t unit_cfg = {
+    .unit_id = TEMP_ADC_UNIT,
   };
-  adc_oneshot_config_channel(adc1_handle, ADC_CHANNEL_7, &adc_channel_config);
+  ESP_ERROR_CHECK(adc_oneshot_new_unit(&unit_cfg, &s_adc));
+
+  adc_oneshot_chan_cfg_t ch_cfg = {
+    .bitwidth = ADC_BITWIDTH_DEFAULT,
+    .atten = TEMP_ADC_ATTEN,
+  };
+  ESP_ERROR_CHECK(adc_oneshot_config_channel(s_adc, TEMP_ADC_CH, &ch_cfg));
+
+  _LOG_I(TAG, "ADC oneshot set up on ADC1_CH6 (GPIO34)");
+  return ESP_OK;
 }
 
-float convert_adc_to_fahrenheit(int adc_val) {
-  const float R_FIXED = 19700.0;
-  const float VCC = 3.3;
-  const int ADC_MAX = 4095;
-  const float BETA = 4300.0;
-  const float T0 = 322.04;
-  const float R0 = 21500.0;
+// ---- Sampler task ----
+static void temp_sampler_task(void *arg) {
+  (void)arg;
+  if (init_adc_oneshot() != ESP_OK) {
+    _LOG_E(TAG, "ADC init failed; exiting sampler task");
+    vTaskDelete(NULL);
+    return;
+  }
+  s_running = true;
 
-  float v_out = ((float)adc_val / ADC_MAX) * VCC;
+  uint32_t last_log = now_ms();
 
-  if (v_out <= 0.0 || v_out >= VCC)
-    return -999.0;
+  while (s_running) {
+    uint32_t t0 = now_ms();
 
-  float r_therm = R_FIXED * (v_out / (VCC - v_out));
-  float inv_T = (1.0 / T0) + (1.0 / BETA) * log(r_therm / R0);
-  float temp_K = 1.0 / inv_T;
-
-  return (temp_K - 273.15) * 9.0 / 5.0 + 32.0;
-}
-
-void temp_monitor_task(void *arg) {
-  while (true) {
-    if (ActiveStatus.HEAT_REQUESTED && (ActiveStatus.CurrentTemp < LOW_LIMIT || ActiveStatus.CurrentTemp > _HIGH_LIMIT)) {
-      _LOG_W("Temp %d out of range (%d-%d). Toggling device %s",
-             status.CurrentTemp, LOW_LIMIT, _HIGH_LIMIT, dev_name[0]);
-
-      toggle_device(dev_name[0]);
+    // Read raw ADC
+    int raw = 0;
+    esp_err_t er = adc_oneshot_read(s_adc, TEMP_ADC_CH, &raw);
+    if (er != ESP_OK) {
+      _LOG_W(TAG, "adc_oneshot_read error=%d", (int)er);
+    } else {
+      push_sample(t0, raw);
     }
-    vTaskDelay(pdMS_TO_TICKS(60000));
+
+    // Periodic logging
+    uint32_t t_now = now_ms();
+    if ((t_now - last_log) >= LOG_EVERY_MS) {
+      float wav = weighted_avg_raw_last_window(t_now);
+      if (!isnan(wav)) {
+        // EXACT string required by you (with your macro style):
+        _LOG_I(TAG, "Current ADC reading: %d", (int)lroundf(wav));
+      } else {
+        _LOG_I(TAG, "Current ADC reading: N/A");
+      }
+      last_log = t_now;
+    }
+
+    // Sleep until next sample
+    uint32_t elapsed = now_ms() - t0;
+    uint32_t wait_ms = (elapsed >= SAMPLE_PERIOD_MS) ? 1 : (SAMPLE_PERIOD_MS - elapsed);
+    vTaskDelay(pdMS_TO_TICKS(wait_ms));
+  }
+
+  vTaskDelete(NULL);
+}
+
+// ---- Public API ----
+void _start_temp_monitor(void) {
+  if (s_task) {
+    _LOG_I(TAG, "temp monitor already running");
+    return;
+  }
+  if (init_adc_oneshot() != ESP_OK) {
+    _LOG_E(TAG, "ADC init failed");
+    return;
+  }
+  BaseType_t ok = xTaskCreate(
+      temp_sampler_task, "temp_sampler", 3072, NULL, 5, &s_task);
+  if (ok != pdPASS) {
+    s_task = NULL;
+    _LOG_E(TAG, "failed to create temp_sampler task");
   }
 }
 
-void sample_analog_inputs_task(void *arg) {
-  while (true) {
-    if (strcmp(status.ActiveState, "OFF") == 0) {
-      _LOG_I("Dishwasher is OFF - not scanning");
-      vTaskDelay(pdMS_TO_TICKS(60000));
-    }
-
-    int Sensor_EnableID = get_deviceid_by_name("Sensor_Enable");
-    if (Sensor_EnableID < 0) {
-      _LOG_E("Sensor_Enable device not found");
-      vTaskDelay(pdMS_TO_TICKS(60000));
-      continue;
-    }
-
-    if (!devices[Sensor_EnableID].state)
-      toggle_device("Sensor_Enable");
-
-    vTaskDelay(pdMS_TO_TICKS(1000));
-
-    int samples = 50;
-    int min_temp = INT_MAX, max_temp = 0, temp_sum = 0;
-
-    for (int i = 0; i < samples; i++) {
-      int temp_val = 0;
-      adc_oneshot_read(adc1_handle, ADC_CHANNEL_7, &temp_val);
-      min_temp = (temp_val < min_temp) ? temp_val : min_temp;
-      max_temp = (temp_val > max_temp) ? temp_val : max_temp;
-      temp_sum += temp_val;
-      vTaskDelay(pdMS_TO_TICKS(100));
-    }
-
-    status.CurrentTemp = convert_adc_to_fahrenheit(temp_sum / samples);
-    float min_var = 100.0f * ((temp_sum / samples) - min_temp) / (temp_sum / samples);
-    float max_var = 100.0f * (max_temp - (temp_sum / samples)) / (temp_sum / samples);
-
-    _LOG_I("Avg Temp: %d, min: %d max: %d variance - %.2f + %.2f",
-           status.CurrentTemp, min_temp, max_temp, min_var, max_var);
-
-    toggle_device("Sensor_Enable");
-    vTaskDelay(pdMS_TO_TICKS(19000));
-  }
+void _stop_temp_monitor(void) {
+  s_running = false;
+  // task self-deletes; give it a tick to exit and clear handle
+  vTaskDelay(pdMS_TO_TICKS(20));
+  s_task = NULL;
 }
+

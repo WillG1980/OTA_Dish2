@@ -3,7 +3,7 @@
 // - Single background task multiplexes LED rows and scans switch rows.
 // - Supports wire->GPIO mapping and "fixed GND" wires (no GPIO).
 // - Implements your default harness map (see Panel_BindDefaultGPIOMap).
-
+#include "dishwasher_programs.h"
 #include "io.h"
 
 #include <string.h>

@@ -26,11 +26,10 @@
 #include "local_wifi.h"
 #include "nvs_flash.h"
 #include <arpa/inet.h>
+#include <http_server.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include <http_server.h>
-
 
 // #include "analog.h"
 #include "buttons.h"
@@ -77,9 +76,7 @@ static void enter_ship_mode_forever(void) {
 
 #include "esp_system.h"
 
-
 static QueueHandle_t action_queue;
-
 
 // prototypes (task functions must be of type void f(void *))
 static void monitor_task_buttons(void *pvParameters);
@@ -89,14 +86,13 @@ static void _init_setup(void);
 static void init_status();
 void print_status();
 
-
-static void net_probe(const char* ip, uint16_t port) {
-    int s = socket(AF_INET, SOCK_DGRAM, IPPROTO_UDP);
-    struct sockaddr_in to = {.sin_family=AF_INET, .sin_port=htons(port)};
-    inet_aton(ip, &to.sin_addr);
-    const char *msg = "ESP UDP probe\n";
-    sendto(s, msg, strlen(msg), 0, (struct sockaddr*)&to, sizeof(to));
-    close(s);
+static void net_probe(const char *ip, uint16_t port) {
+  int s = socket(AF_INET, SOCK_DGRAM, IPPROTO_UDP);
+  struct sockaddr_in to = {.sin_family = AF_INET, .sin_port = htons(port)};
+  inet_aton(ip, &to.sin_addr);
+  const char *msg = "ESP UDP probe\n";
+  sendto(s, msg, strlen(msg), 0, (struct sockaddr *)&to, sizeof(to));
+  close(s);
 }
 // ----- implementations -----
 static void _init_setup(void) {
@@ -105,7 +101,7 @@ static void _init_setup(void) {
   local_wifi_init_and_connect();
   logger_init("10.0.0.123", 5514, 4096);
   http_server_actions_init();
-  
+
   int counter = 60;
   while (counter > 0) {
     _LOG_I("waiting on wifi... %d remaining, status %d", counter,
@@ -118,17 +114,20 @@ static void _init_setup(void) {
   }
   initialize_sntp_blocking();
   init_switchesandleds();
-  net_probe("10.0.0.123",5514);
-      //logger_flush();
+  net_probe("10.0.0.123", 5514);
+  // logger_flush();
   init_status();
   print_status();
   prepare_programs();
   //  vTaskDelay(pdMS_TO_TICKS(1000000));
 
   // create background monitoring tasks (use reasonable stack sizes)
-  xTaskCreate(monitor_task_buttons, "monitor_task_buttons", 4096, NULL, 5,              NULL);
-  xTaskCreate(monitor_task_temperature, "monitor_task_temperature", 4096, NULL,              5, NULL);
-  xTaskCreate(update_published_status, "update_published_status", 4096, NULL, 5,              NULL);
+  xTaskCreate(monitor_task_buttons, "monitor_task_buttons", 4096, NULL, 5,
+              NULL);
+  xTaskCreate(monitor_task_temperature, "monitor_task_temperature", 4096, NULL,
+              5, NULL);
+  xTaskCreate(update_published_status, "update_published_status", 4096, NULL, 5,
+              NULL);
   // wait (up to 60s) for wifi
 }
 static void monitor_task_buttons(void *pvParameters) {
@@ -184,16 +183,13 @@ static void update_published_status(void *pvParameters) {
                ActiveStatus.Cycle);
       };
     } else {
-   //   _LOG_I("Cycle-Processing");
+      //   _LOG_I("Cycle-Processing");
       print_status();
       vTaskDelay(pdMS_TO_TICKS(30000));
     }
   }
   _LOG_I("Finishing");
 } // run_program task: summarises and then blocks
-
-
-
 
 void init_status(void) {
 
@@ -214,18 +210,25 @@ void init_status(void) {
 // app_main
 httpd_handle_t server = NULL;
 void app_main(void) {
-  
+
   gpio_mask_config_outputs(ALL_ACTORS);
   gpio_mask_clear(HEAT | SPRAY | INLET | DRAIN | SOAP); // set all pins to off
-_init_LED();
+  _init_LED();
+  _start_temp_monitor();
 
-LED_Toggle("status_washing",LED_ON);
-LED_Toggle("status_sensing",LED_ON);
-LED_Toggle("status_drying",LED_ON);
-LED_Toggle("status_clean",LED_ON);
-LED_Toggle("delay_1",LED_ON);
-LED_Toggle("delay_3",LED_ON);
-LED_Toggle("switch_4",LED_ON);
+  LED_Toggle("status_washing", LED_ON);
+  vTaskDelay(pdMS_TO_TICKS(2000));
+  LED_Toggle("status_sensing", LED_ON);
+  vTaskDelay(pdMS_TO_TICKS(2000));
+  LED_Toggle("status_drying", LED_ON);
+  vTaskDelay(pdMS_TO_TICKS(2000));
+  LED_Toggle("status_clean", LED_ON);
+  vTaskDelay(pdMS_TO_TICKS(2000));
+  LED_Toggle("delay_1", LED_ON);
+  vTaskDelay(pdMS_TO_TICKS(2000));
+  LED_Toggle("delay_3", LED_ON);
+  vTaskDelay(pdMS_TO_TICKS(2000));
+  LED_Toggle("switch_4", LED_ON);
 
   _LOG_I("Booting: %s", boot_partition_cstr());
   _LOG_I("Running: %s", running_partition_cstr());
@@ -244,10 +247,9 @@ LED_Toggle("switch_4",LED_ON);
 
   // Keep main alive but yield CPU — do not busy-loop
   while (1) {
-
     if (strcmp(ActiveStatus.Cycle, "fini") == 0) {
       log_uptime_hms();
-      enter_ship_mode_forever();//load is finished, shut down
+      enter_ship_mode_forever(); // load is finished, shut down
     }
     vTaskDelay(pdMS_TO_TICKS(10000));
   }

@@ -1,0 +1,1 @@
+find . -type f \( -name '*.c' -o -name '*.cpp' -o -name '*.h' \) -exec sed -i -E '/^[[:space:]]*#[[:space:]]*define/! s/\bESP_LOG([DIWE])\b/_LOG_\1/g' {} +
