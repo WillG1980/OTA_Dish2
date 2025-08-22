@@ -66,7 +66,7 @@ esp_err_t http_get(const char *url, char *out_buf, size_t out_len, int timeout_m
 
     esp_err_t err = esp_http_client_open(client, 0);
     if (err != ESP_OK) {
-        ESP_LOGE(TAG, "open failed: %s", esp_err_to_name(err));
+        _LOG_E( "open failed: %s", esp_err_to_name(err));
         esp_http_client_cleanup(client);
         return err;
     }
@@ -90,7 +90,7 @@ esp_err_t http_get(const char *url, char *out_buf, size_t out_len, int timeout_m
     if (status >= 200 && status < 300) {
         return ESP_OK;
     } else {
-        ESP_LOGW(TAG, "GET %s -> HTTP %d", url, status);
+        _LOG_W( "GET %s -> HTTP %d", url, status);
         return ESP_FAIL;
     }
 }

@@ -43,10 +43,10 @@
 #include "esp_log.h"     // if you prefer ESP_LOGI instead of _LOG_I
 #include <local_time.h>
 
-#define _LOG_I(fmt, ...)   ESP_LOGI(TAG, "[Ver:%s %s:%s:%d]= " fmt, APP_VERSION,__FILE__, __func__, __LINE__, ##__VA_ARGS__)
-#define _LOG_W(fmt, ...)   ESP_LOGW(TAG, "[Ver:%s %s:%s:%d]= " fmt, APP_VERSION,__FILE__, __func__, __LINE__, ##__VA_ARGS__)
-#define _LOG_E(fmt, ...)   ESP_LOGE(TAG, "[Ver:%s %s:%s:%d]= " fmt, APP_VERSION,__FILE__, __func__, __LINE__, ##__VA_ARGS__)
-#define _LOG_D(fmt, ...)   ESP_LOGD(TAG, "[Ver:%s %s:%s:%d]= " fmt, APP_VERSION,__FILE__, __func__, __LINE__, ##__VA_ARGS__)
+#define _LOG_I(fmt, ...)   _LOG_I( "[Ver:%s %s:%s:%d]= " fmt, APP_VERSION,__FILE__, __func__, __LINE__, ##__VA_ARGS__)
+#define _LOG_W(fmt, ...)   _LOG_W( "[Ver:%s %s:%s:%d]= " fmt, APP_VERSION,__FILE__, __func__, __LINE__, ##__VA_ARGS__)
+#define _LOG_E(fmt, ...)   _LOG_E( "[Ver:%s %s:%s:%d]= " fmt, APP_VERSION,__FILE__, __func__, __LINE__, ##__VA_ARGS__)
+#define _LOG_D(fmt, ...)   _LOG_D( "[Ver:%s %s:%s:%d]= " fmt, APP_VERSION,__FILE__, __func__, __LINE__, ##__VA_ARGS__)
 
 
 #define COPY_STRING(dest, src)                                                 \

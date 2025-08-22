@@ -59,8 +59,9 @@ static void program_task_trampoline(void *arg) {
 
 // Start a program only if none is running
 static void start_program_if_idle(const char *name) {
+  _LOG_I("Program run requested: %s", name);
   if (program_task_handle != NULL) {
-    ESP_LOGW(TAG, "Program already running; ignoring Start/Test/HiTemp request");
+    _LOG_W( "Program already running; ignoring Start/Test/HiTemp request");
     return;
   }
 
@@ -70,9 +71,9 @@ static void start_program_if_idle(const char *name) {
       program_task_trampoline, "run_program", 8192, NULL, 5, &program_task_handle);
   if (ok != pdPASS) {
     program_task_handle = NULL;
-    ESP_LOGE(TAG, "Failed to create run_program task");
+    _LOG_E( "Failed to create run_program task");
   } else {
-    ESP_LOGI(TAG, "Started program '%s'", name);
+    _LOG_I( "Started program '%s'", name);
   }
 }
 
@@ -90,22 +91,22 @@ static void perform_action(actions_t action) {
       start_program_if_idle("HiTemp");
       break;
     case ACTION_CANCEL:
-      ESP_LOGI(TAG, "Cancel requested");
+      _LOG_I( "Cancel requested");
       // If you have a cooperative cancel mechanism, trigger it here.
       // Example:
       // setCharArray(ActiveStatus.Program, "Idle");
       // notify_run_program_cancel();
       break;
     case ACTION_UPDATE:
-      ESP_LOGI(TAG, "Update requested");
+      _LOG_I( "Update requested");
       check_and_perform_ota();  // Non-blocking preferred if available
       break;
     case ACTION_REBOOT:
-      ESP_LOGI(TAG, "Reboot requested");
+      _LOG_I( "Reboot requested");
       esp_restart();
       break;
     default:
-      ESP_LOGW(TAG, "Unknown or no-op action");
+      _LOG_W( "Unknown or no-op action");
   }
 }
 
@@ -115,7 +116,7 @@ static void action_worker_task(void *arg) {
     if (xQueueReceive(action_queue, &act, portMAX_DELAY) == pdPASS) {
       // Log queue depth on each processed item (messages waiting AFTER dequeue)
       UBaseType_t pending = uxQueueMessagesWaiting(action_queue);
-      ESP_LOGI(TAG, "Action dequeued=%d, queue depth now=%u", (int)act, (unsigned)pending);
+      _LOG_I( "Action dequeued=%d, queue depth now=%u", (int)act, (unsigned)pending);
       perform_action(act);
     }
   }
@@ -314,18 +315,18 @@ httpd_handle_t start_webserver(void) {
 
     action_queue = xQueueCreate(16, sizeof(actions_t));
     if (!action_queue) {
-      ESP_LOGE(TAG, "Failed to create action queue");
+      _LOG_E( "Failed to create action queue");
     } else {
       BaseType_t ok = xTaskCreate(action_worker_task, "action_worker", 4096, NULL, 5, &action_task_handle);
       if (ok != pdPASS) {
-        ESP_LOGE(TAG, "Failed to create action worker task");
+        _LOG_E( "Failed to create action worker task");
         action_task_handle = NULL;
       }
     }
   }
 
   if (s_server) {
-    ESP_LOGI(TAG, "Webserver already running");
+    _LOG_I( "Webserver already running");
     return s_server;
   }
 
@@ -334,7 +335,7 @@ httpd_handle_t start_webserver(void) {
 
   esp_err_t ret = httpd_start(&s_server, &config);
   if (ret != ESP_OK) {
-    ESP_LOGE(TAG, "httpd_start failed: %s", esp_err_to_name(ret));
+    _LOG_E( "httpd_start failed: %s", esp_err_to_name(ret));
     s_server = NULL;
     return NULL;
   }
@@ -351,12 +352,13 @@ httpd_handle_t start_webserver(void) {
       .handler = action_post_handler,
       .user_ctx = NULL};
 
+  /*
   static const httpd_uri_t uri_action_get = {
       .uri = "/action",
       .method = HTTP_GET,
       .handler = action_get_handler,   // keep for compatibility; remove if you want POST-only
       .user_ctx = NULL};
-
+*/
   static const httpd_uri_t uri_action_options = {
       .uri = "/action",
       .method = HTTP_OPTIONS,
@@ -371,11 +373,11 @@ httpd_handle_t start_webserver(void) {
 
   httpd_register_uri_handler(s_server, &uri_root);
   httpd_register_uri_handler(s_server, &uri_action_post);
-  //httpd_register_uri_handler(s_server, &uri_action_get);
+  // httpd_register_uri_handler(s_server, &uri_action_get);
   httpd_register_uri_handler(s_server, &uri_action_options);
   httpd_register_uri_handler(s_server, &uri_status);
 
-  ESP_LOGI(TAG, "Webserver started");
+  _LOG_I( "Webserver started");
   return s_server;
 }
 
@@ -383,6 +385,6 @@ void stop_webserver(void) {
   if (s_server) {
     httpd_stop(s_server);
     s_server = NULL;
-    ESP_LOGI(TAG, "Webserver stopped");
+    _LOG_I( "Webserver stopped");
   }
 }

@@ -120,7 +120,7 @@ static void wifi_event_handler(void *arg,
     if (event_base == WIFI_EVENT) {
         switch (event_id) {
         case WIFI_EVENT_STA_START:
-            ESP_LOGI(TAG, "WIFI_EVENT_STA_START → esp_wifi_connect()");
+            _LOG_I( "WIFI_EVENT_STA_START → esp_wifi_connect()");
             esp_wifi_connect();
             break;
 
@@ -130,15 +130,15 @@ static void wifi_event_handler(void *arg,
 
             if (s_blocking_wait_active) {
                 if (s_retries_remaining-- > 0) {
-                    ESP_LOGW(TAG, "Disconnected; retrying… (%d left)", s_retries_remaining);
+                    _LOG_W( "Disconnected; retrying… (%d left)", s_retries_remaining);
                     esp_wifi_connect();
                 } else {
-                    ESP_LOGE(TAG, "Giving up on this credential.");
+                    _LOG_E( "Giving up on this credential.");
                     xEventGroupSetBits(s_wifi_event_group, WIFI_FAIL_BIT);
                 }
             } else {
                 // After we've "locked" a credential, always retry the SAME config.
-                ESP_LOGW(TAG, "Disconnected; retrying current credential…");
+                _LOG_W( "Disconnected; retrying current credential…");
                 esp_wifi_connect();
             }
             break;
@@ -160,7 +160,7 @@ static esp_err_t _try_credential(const char *ssid,
                                  int retries,
                                  uint32_t timeout_ms)
 {
-    ESP_LOGI(TAG, "Trying SSID: \"%s\"", ssid);
+    _LOG_I( "Trying SSID: \"%s\"", ssid);
 
     _set_sta_config(ssid, pass);
 
@@ -190,16 +190,16 @@ static esp_err_t _try_credential(const char *ssid,
     s_blocking_wait_active = false;
 
     if (bits & WIFI_CONNECTED_BIT) {
-        ESP_LOGI(TAG, "Connected to \"%s\"", ssid);
+        _LOG_I( "Connected to \"%s\"", ssid);
         return ESP_OK;
     }
     if (bits & WIFI_FAIL_BIT) {
-        ESP_LOGE(TAG, "Failed to connect to \"%s\"", ssid);
+        _LOG_E( "Failed to connect to \"%s\"", ssid);
         return ESP_FAIL;
     }
 
     // Timeout without explicit fail bit (e.g., no events fired)
-    ESP_LOGE(TAG, "Timeout waiting for connection to \"%s\"", ssid);
+    _LOG_E( "Timeout waiting for connection to \"%s\"", ssid);
     return ESP_ERR_TIMEOUT;
 }
 
@@ -242,17 +242,17 @@ esp_err_t local_wifi_init_and_connect(void)
     s_selected_cred = _load_selected_cred_from_nvs();
     if (s_selected_cred == CRED_REAL) {
         if (_try_credential(WIFI_SSID_REAL, WIFI_PASS_REAL, WIFI_RETRIES_PER_CRED, WIFI_CONNECT_TIMEOUT_MS) == ESP_OK) {
-            ESP_LOGI(TAG, "Using saved REAL credentials.");
+            _LOG_I( "Using saved REAL credentials.");
             return ESP_OK;
         }
-        ESP_LOGW(TAG, "Saved REAL credential failed; will still stay on REAL for reconnects.");
+        _LOG_W( "Saved REAL credential failed; will still stay on REAL for reconnects.");
         return ESP_FAIL;
     } else if (s_selected_cred == CRED_WOKWI) {
         if (_try_credential(WIFI_SSID_WOKWI, WIFI_PASS_WOKWI, WIFI_RETRIES_PER_CRED, WIFI_CONNECT_TIMEOUT_MS) == ESP_OK) {
-            ESP_LOGI(TAG, "Using saved WOKWI credentials.");
+            _LOG_I( "Using saved WOKWI credentials.");
             return ESP_OK;
         }
-        ESP_LOGW(TAG, "Saved WOKWI credential failed; will still stay on WOKWI for reconnects.");
+        _LOG_W( "Saved WOKWI credential failed; will still stay on WOKWI for reconnects.");
         return ESP_FAIL;
     }
 
@@ -263,14 +263,14 @@ esp_err_t local_wifi_init_and_connect(void)
         return ESP_OK;
     }
 
-    ESP_LOGW(TAG, "REAL failed; falling back to WOKWI…");
+    _LOG_W( "REAL failed; falling back to WOKWI…");
     if (_try_credential(WIFI_SSID_WOKWI, WIFI_PASS_WOKWI, WIFI_RETRIES_PER_CRED, WIFI_CONNECT_TIMEOUT_MS) == ESP_OK) {
         s_selected_cred = CRED_WOKWI;
         _save_selected_cred_to_nvs(s_selected_cred);
         return ESP_OK;
     }
 
-    ESP_LOGE(TAG, "Both credentials failed.");
+    _LOG_E( "Both credentials failed.");
     return ESP_FAIL;
 }
 

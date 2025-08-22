@@ -192,25 +192,25 @@ static esp_err_t validate_mapping(void) {
   bool ok = true;
   for (size_t i = 0; i < LED_COUNT; ++i) {
     if (!wire_is_gpio(LEDS[i].row)) {
-      ESP_LOGE(TAG, "LED '%s' row W%u not mapped to a GPIO.", LEDS[i].name, LEDS[i].row);
+      _LOG_E( "LED '%s' row W%u not mapped to a GPIO.", LEDS[i].name, LEDS[i].row);
       ok = false;
     }
     if (!(wire_is_gpio(LEDS[i].col) || wire_is_fixed_gnd(LEDS[i].col))) {
-      ESP_LOGE(TAG, "LED '%s' col W%u not mapped (GPIO or FIXED_GND required).", LEDS[i].name, LEDS[i].col);
+      _LOG_E( "LED '%s' col W%u not mapped (GPIO or FIXED_GND required).", LEDS[i].name, LEDS[i].col);
       ok = false;
     }
     if (wire_is_fixed_gnd(LEDS[i].col)) {
-      ESP_LOGW(TAG, "LED '%s' uses FIXED_GND column W%u: cannot be gated per-LED; lights when row W%u is active.",
+      _LOG_W( "LED '%s' uses FIXED_GND column W%u: cannot be gated per-LED; lights when row W%u is active.",
                LEDS[i].name, LEDS[i].col, LEDS[i].row);
     }
   }
   for (size_t i = 0; i < SWITCH_COUNT; ++i) {
     if (!wire_is_gpio(SWITCHES[i].row)) {
-      ESP_LOGE(TAG, "SW '%s' row W%u not mapped to a GPIO.", SWITCHES[i].name, SWITCHES[i].row);
+      _LOG_E( "SW '%s' row W%u not mapped to a GPIO.", SWITCHES[i].name, SWITCHES[i].row);
       ok = false;
     }
     if (!wire_is_gpio(SWITCHES[i].col)) {
-      ESP_LOGE(TAG, "SW '%s' col W%u not mapped to a GPIO (cannot read FIXED_GND as input).",
+      _LOG_E( "SW '%s' col W%u not mapped to a GPIO (cannot read FIXED_GND as input).",
                SWITCHES[i].name, SWITCHES[i].col);
       ok = false;
     }
@@ -240,7 +240,7 @@ static void matrix_task(void *arg) {
   const int led_col_idle = !LED_COL_ON_LEVEL;
   const uint8_t debounce_ticks = (DEBOUNCE_MS * MATRIX_SCAN_HZ) / 1000;
   if (debounce_ticks == 0) {
-    ESP_LOGW(TAG, "DEBOUNCE_MS too small for MATRIX_SCAN_HZ; effective 1 tick.");
+    _LOG_W( "DEBOUNCE_MS too small for MATRIX_SCAN_HZ; effective 1 tick.");
   }
 
   preidle_all();
@@ -383,7 +383,7 @@ esp_err_t _init_LED(void) {
   // Ensure idle states before starting
   preidle_all();
   start_matrix_task_once();
-  ESP_LOGI(TAG, "LED init: rows=%u cols=%u", s_led_row_count, s_led_col_count);
+  _LOG_I( "LED init: rows=%u cols=%u", s_led_row_count, s_led_col_count);
   return ESP_OK;
 }
 
@@ -394,7 +394,7 @@ esp_err_t _init_Switch(void) {
   // Ensure idle states before starting
   preidle_all();
   start_matrix_task_once();
-  ESP_LOGI(TAG, "SW init: rows=%u cols=%u", s_sw_row_count, s_sw_col_count);
+  _LOG_I( "SW init: rows=%u cols=%u", s_sw_row_count, s_sw_col_count);
   return ESP_OK;
 }
 

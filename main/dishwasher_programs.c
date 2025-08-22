@@ -89,9 +89,11 @@ void prepare_programs(void) {
 
 void run_program(void *pvParameters) {
   (void)pvParameters;
+  
   _LOG_I("Program selected: %s", ActiveStatus.Program);
   gpio_mask_config_outputs(ALL_ACTORS);
   char *old_cycle = "";
+  
   if(!verify_program()){
     setCharArray(ActiveStatus.Program,"INVALID");
     _LOG_E("Invalid program selected: %s", ActiveStatus.Program);
@@ -113,35 +115,17 @@ void run_program(void *pvParameters) {
     time_t target_time = get_unix_epoch() + TTR ;
     COPY_STRING(ActiveStatus.Cycle, Line->name_cycle);
     COPY_STRING(ActiveStatus.Step, Line->name_step);
-    _LOG_I("Cycle: %s , Step: %s, ActiveStatus.Cycle: %s, ActiveStatus.Step: %s", Line->name_cycle, Line->name_step, ActiveStatus.Cycle, ActiveStatus.Step);
-    _LOG_I("%10.8s->%10.8s->%10.8s  TTR:%d: MaskedBits: %s \n", ActiveStatus.Program,Line->name_cycle, Line->name_step, TTR, return_masked_bits(Line->gpio_mask, HEAT | SPRAY | INLET | DRAIN | SOAP));
+    _LOG_I("%8.8s->%8.8s->%8.8s  TTR:%d: MaskedBits: %s \n", ActiveStatus.Program,Line->name_cycle, Line->name_step, TTR, return_masked_bits(Line->gpio_mask, HEAT | SPRAY | INLET | DRAIN | SOAP));
     gpio_mask_set(Line->gpio_mask); // set all pins to off
     vTaskDelay(pdMS_TO_TICKS(5 * SEC)); // run for 5 seconds minimum
+
     for (; TTR > 0; TTR -= 5) 
         {
           gpio_mask_set(Line->gpio_mask); // set all pins to on every 5 seconds to be safe
-          _LOG_I("\t%s:%s\t%d",Line->name_cycle,Line->name_step,TTR);
+          _LOG_I("\t%8s->%8s:%8s\t%d",ActiveStatus.Program,Line->name_cycle,Line->name_step,TTR);
           vTaskDelay(pdMS_TO_TICKS(5000));
         }
-    
-    
-    /*
-    while (target_time < get_unix_epoch()) { // until MAX time reached
-      gpio_mask_set(Line->gpio_mask); // set all pins to off
-      _LOG_I("Time to run: %d minute -- %s - %s", Line->min_time,
-             get_us_time_string(target_time),
-             get_us_time_string(get_unix_epoch()));
-
-      vTaskDelay(pdMS_TO_TICKS(5 * SEC)); // Do_runTime
-    }
-      */
   }
-
-  // TODO: implement actual runtime control of GPIOs, temps, timing, etc.
-  // For now block forever (or you could vTaskDelete(NULL) to end the task)
-  printf("\nIn final closeout - power cycle to restart/open door\n");
-
-  // never reached
   vTaskDelete(NULL);
 }
 
