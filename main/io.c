@@ -284,7 +284,7 @@ static void matrix_task(void *arg) {
       xSemaphoreGive(s_lock);
 
       // Hold briefly for visibility
-      ets_rom_delay_us(500); // ~0.5 ms per row; adjust as needed
+      esp_rom_delay_us(500); // ~0.5 ms per row; adjust as needed
 
       // Deactivate row and idle GPIO columns
       set_gpio_output(rg, led_row_idle);
