@@ -211,6 +211,8 @@ void init_status(void) {
   ActiveStatus.time_elapsed = 0;
   _LOG_I("Ending Function");
 }
+gpio_mask_config_outputs(ALL_ACTORS);
+gpio_mask_clear_outputs(ALL_ACTORS);
 // app_main
 httpd_handle_t server = NULL;
 void app_main(void) {

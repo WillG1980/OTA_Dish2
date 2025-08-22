@@ -44,6 +44,7 @@ static void  _get_ota(const char *url);                           // spawns task
 static void  _get_ota_task(void *param);                          // task entry
 
 // Track single OTA task instance
+
 static TaskHandle_t s_ota_task = NULL;
 
 // Optional: small event handler (currently unused)
