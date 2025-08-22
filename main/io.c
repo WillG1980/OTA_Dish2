@@ -19,8 +19,6 @@
 #include "esp_check.h"
 #include "esp_rom_sys.h" // esp_rom_delay_us
 
-#define TAG "panel_matrix"
-
 /* ====== CONFIG: timing & electrical (adjust to taste) ====== */
 #define MATRIX_TASK_STACK      4096
 #define MATRIX_TASK_PRIO       5
