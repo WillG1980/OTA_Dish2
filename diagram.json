@@ -146,6 +146,8 @@
     }
   ],
   "connections": [
+    [ "esp:TX0", "$serialMonitor:RX", "black", [] ],
+    [ "esp:RX0", "$serialMonitor:TX", "black", [] ],
     [ "esp:17", "led_washing:A", "red", [] ],
     [ "led_washing:C", "esp:GND.1", "green", [] ],
     [ "esp:18", "led_sensing:A", "red", [] ],
@@ -183,9 +185,7 @@
     [ "esp:12", "relay7_led:A", "blue", [] ],
     [ "relay7_led:C", "esp:GND.1", "yellow", [] ],
     [ "esp:13", "relay8_led:A", "blue", [] ],
-    [ "relay8_led:C", "esp:GND.1", "yellow", [] ],
-    [ "esp:TX0", "$serialMonitor:RX", "white", [] ],
-    [ "esp:RX0", "$serialMonitor:TX", "white", [] ]
+    [ "relay8_led:C", "esp:GND.1", "yellow", [] ]
   ],
   "dependencies": {}
 }

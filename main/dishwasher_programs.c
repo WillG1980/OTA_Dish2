@@ -120,7 +120,7 @@ void run_program(void *pvParameters) {
     for (; TTR > 0; TTR -= 5) 
         {
           gpio_mask_set(Line->gpio_mask); // set all pins to on every 5 seconds to be safe
-          _LOG_D("\t%s:%s\t%d",Line->name_cycle,Line->name_step,TTR);
+          _LOG_I("\t%s:%s\t%d",Line->name_cycle,Line->name_step,TTR);
           vTaskDelay(pdMS_TO_TICKS(5000));
         }
     
