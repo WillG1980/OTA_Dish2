@@ -27,6 +27,7 @@
 #include "esp_log.h"     // if you prefer ESP_LOGI instead of _LOG_I
 #include <local_time.h>
 #include <dishwasher_programs.h>
+#include "analog.h"
 
 volatile status_struct ActiveStatus;
 
