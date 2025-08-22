@@ -64,7 +64,10 @@ static void perform_action(actions_t action) {
         setCharArray(ActiveStatus.Cycle,   "Cancel");
         setCharArray(ActiveStatus.Program, "Cancel");
         ActiveStatus.HEAT_REQUESTED = false;
+        _LOG_I("Restarting system after cancel");
         esp_restart();
+        // The following log should never be reached because esp_restart() does not return.
+        _LOG_I("This should never be reached");
         break;
 
     case ACTION_STATUS:
