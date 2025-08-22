@@ -371,7 +371,7 @@ httpd_handle_t start_webserver(void) {
 
   httpd_register_uri_handler(s_server, &uri_root);
   httpd_register_uri_handler(s_server, &uri_action_post);
-  httpd_register_uri_handler(s_server, &uri_action_get);
+  //httpd_register_uri_handler(s_server, &uri_action_get);
   httpd_register_uri_handler(s_server, &uri_action_options);
   httpd_register_uri_handler(s_server, &uri_status);
 
