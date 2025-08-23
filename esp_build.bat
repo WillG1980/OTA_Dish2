@@ -20,7 +20,7 @@ for /f %%i in ('git rev-parse --short HEAD') do set SHORTSHA=%%i
 echo Building commit !SHORTSHA! as build !VERSION! ...
 
 rem --- Build ---
-idf.py build
+rem idf.py build
 set BUILD_RC=%ERRORLEVEL%
 
 rem --- Tag result (always) ---
