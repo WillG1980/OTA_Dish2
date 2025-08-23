@@ -15,50 +15,50 @@
       "type": "wokwi-led",
       "id": "led_washing",
       "top": -99.6,
-      "left": -293.8,
+      "left": -485.8,
       "attrs": { "color": "red", "label": "status_washing" }
     },
     {
       "type": "wokwi-led",
       "id": "led_sensing",
       "top": -99.6,
-      "left": -159.4,
+      "left": -217,
       "attrs": { "color": "red", "label": "status_sensing" }
     },
     {
       "type": "wokwi-led",
       "id": "led_drying",
       "top": -99.6,
-      "left": -207.4,
+      "left": -293.8,
       "attrs": { "color": "red", "label": "status_drying" }
     },
     {
       "type": "wokwi-led",
       "id": "led_clean",
       "top": -99.6,
-      "left": -255.4,
+      "left": -380.2,
       "attrs": { "color": "red", "label": "status_clean" }
     },
     {
       "type": "wokwi-led",
       "id": "led_delay1",
-      "top": -32.4,
-      "left": 186.2,
+      "top": -42,
+      "left": -245.8,
       "attrs": { "color": "red", "label": "delay_1" }
     },
     {
       "type": "wokwi-led",
       "id": "led_delay3",
-      "top": -22.8,
-      "left": 234.2,
-      "attrs": { "color": "red", "label": "delay_3" }
+      "top": -42,
+      "left": -418.6,
+      "attrs": { "color": "magenta", "label": "delay_3" }
     },
     {
       "type": "wokwi-led",
       "id": "led_sw4",
-      "top": -40,
-      "left": 130,
-      "attrs": { "color": "red", "label": "switch_4" }
+      "top": -42,
+      "left": -341.8,
+      "attrs": { "color": "orange", "label": "switch_4" }
     },
     {
       "type": "wokwi-pushbutton",

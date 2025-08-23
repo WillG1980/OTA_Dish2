@@ -212,16 +212,28 @@ static actions_t parse_action_from_body(httpd_req_t *req) {
 }
 
 /* ===================== HTTP handlers ===================== */
-
-/* Root page: buttons auto-generated from ACTIONS[] (POST-only UI) */
+/* Root page: buttons + 95% width status window
+   - POST-only UI
+   - Auto-refresh /status every 10s
+   - Also refresh /status 1s after any button click
+*/
 static esp_err_t root_get_handler(httpd_req_t *req) {
   set_common_headers(req);
   httpd_resp_set_type(req, "text/html; charset=utf-8");
 
-  httpd_resp_sendstr_chunk(req, "<!doctype html><meta name=viewport content='width=device-width, initial-scale=1'>"
-                                "<title>Dishwasher</title>"
-                                "<style>button{margin:4px;padding:10px 16px;font-size:16px}</style>"
-                                "<h1>Dishwasher Controls</h1><div>");
+  httpd_resp_sendstr_chunk(req,
+    "<!doctype html>"
+    "<meta name=viewport content='width=device-width, initial-scale=1'>"
+    "<title>Dishwasher</title>"
+    "<style>"
+      "button{margin:4px;padding:10px 16px;font-size:16px}"
+      "#out{white-space:pre-wrap}"
+      "#statusBox{width:95%;margin:12px auto;padding:10px;border:1px solid #ccc;"
+                 "border-radius:6px;min-height:140px;overflow:auto;background:#fafafa}"
+    "</style>"
+    "<h1>Dishwasher Controls</h1><div>"
+  );
+
   for (int i = 1; i < ACTION_MAX; i++) {
     if (ACTIONS[i].show_button && ACTIONS[i].name) {
       httpd_resp_sendstr_chunk(req, "<button onclick='doPost(\"");
@@ -231,46 +243,51 @@ static esp_err_t root_get_handler(httpd_req_t *req) {
       httpd_resp_sendstr_chunk(req, "</button>");
     }
   }
+
   httpd_resp_sendstr_chunk(req,
-    "</div><pre id=out></pre>"
+    "</div>"
+    "<pre id='out'></pre>"
+    "<h2>Status</h2>"
+    "<div id='statusBox'><!-- status loads here --></div>"
+
     "<script>"
+    "let statusTimer=null;"
+    "async function loadStatus(){"
+      "try{"
+        "const r=await fetch('/status',{cache:'no-store',credentials:'same-origin'});"
+        "const t=await r.text();"
+        "document.getElementById('statusBox').innerHTML=t;"
+      "}catch(e){"
+        "document.getElementById('statusBox').textContent='Error loading /status: '+e;"
+      "}"
+    "}"
+    "function startStatusAutoRefresh(periodMs){"
+      "if(statusTimer) clearInterval(statusTimer);"
+      "statusTimer=setInterval(loadStatus, periodMs);"
+    "}"
     "async function doPost(action){"
       "const r=await fetch('/action',{method:'POST',headers:{'Content-Type':'application/x-www-form-urlencoded'},"
       "body:'action='+encodeURIComponent(action),cache:'no-store',credentials:'same-origin'});"
-      "const t=await r.text();document.getElementById('out').textContent=(r.ok?'OK ':'ERR ')+t;"
+      "const t=await r.text();"
+      "document.getElementById('out').textContent=(r.ok?'OK ':'ERR ')+t;"
+      "setTimeout(loadStatus, 1000);"          /* refresh /status 1s after click */
     "}"
-    "</script>");
+    "window.addEventListener('load',()=>{"
+      "loadStatus();"                          /* initial status load */
+      "startStatusAutoRefresh(10000);"         /* refresh every 10s */
+    "});"
+    "</script>"
+  );
+
   httpd_resp_sendstr_chunk(req, NULL);
   return ESP_OK;
 }
 
-/* POST /action: primary API (GET support removed) */
-static esp_err_t action_post_handler(httpd_req_t *req) {
-  set_common_headers(req);
-  httpd_resp_set_type(req, "text/plain; charset=utf-8");
-
-  actions_t act = parse_action_from_body(req);
-  if (act == ACTION_NONE) {
-    httpd_resp_set_status(req, "400 Bad Request");
-    httpd_resp_sendstr(req, "missing or invalid action");
-    return ESP_OK;
-  }
-
-  if (!action_queue || xQueueSend(action_queue, &act, 0) != pdPASS) {
-    httpd_resp_set_status(req, "503 Service Unavailable");
-    httpd_resp_sendstr(req, "busy");
-    return ESP_OK;
-  }
-
-  UBaseType_t pending = uxQueueMessagesWaiting(action_queue);
-  char msg[80];
-  snprintf(msg, sizeof(msg), "queued %s; queue depth=%u\n",
-           ACTIONS[act].name ? ACTIONS[act].name : "?", (unsigned)pending);
-  httpd_resp_sendstr(req, msg);
-  return ESP_OK;
-}
-
 /* OPTIONS /action: CORS preflight */
+
+
+
+
 static esp_err_t action_options_handler(httpd_req_t *req) {
   httpd_resp_set_hdr(req, "Access-Control-Allow-Origin", "*"); // restrict if needed
   httpd_resp_set_hdr(req, "Access-Control-Allow-Methods", "POST, OPTIONS");
