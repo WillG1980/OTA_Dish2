@@ -3,6 +3,8 @@
 // - Single background task multiplexes LED rows and scans switch rows.
 // - Supports wire->GPIO mapping and "fixed GND" wires (no GPIO).
 // - Implements your default harness map (see Panel_BindDefaultGPIOMap).
+// - WDT-friendly: no busy-waits; switch scan duty-cycled to a short window each second.
+
 #include "dishwasher_programs.h"
 #include "io.h"
 
@@ -14,22 +16,22 @@
 #include "esp_err.h"
 #include "esp_log.h"
 #include "esp_check.h"
-#include "esp_rom_sys.h" // ets_delay_us
-#include "esp_log.h"
-#include "esp_check.h"
-#include "esp_rom_sys.h" // esp_rom_delay_us
 
-/* ====== CONFIG: timing & electrical (adjust to taste) ====== */
+// ====== CONFIG: timing & electrical (adjust to taste) ======
 #define MATRIX_TASK_STACK      4096
 #define MATRIX_TASK_PRIO       5
-#define MATRIX_SCAN_HZ         500                     // overall scan frequency
+#define MATRIX_SCAN_HZ         500                     // overall scan frequency (LED refresh cadence)
 #define DEBOUNCE_MS            30                      // debounce window
 #define LED_ROW_ON_LEVEL       1                       // row drive level to light an LED
 #define LED_COL_ON_LEVEL       0                       // col drive level to light an LED (e.g., sink)
 #define SW_ROW_ACTIVE_LEVEL    1                       // row drive level while scanning switches
 #define SW_COL_PRESSED_LEVEL   0                       // expected level on column when switch is pressed
 
-/* ====== Wire map ====== */
+// ---- Switch scan duty cycle: only scan during a small window each second ----
+#define SW_SCAN_PERIOD_MS      1000    // duration of the cycle
+#define SW_SCAN_WINDOW_MS      150     // active scanning window within the cycle
+
+// ====== Wire map ======
 #define MAX_WIRE 14
 
 typedef enum {
@@ -66,7 +68,7 @@ static inline bool wire_is_gpio(uint8_t wire)      { return wire_is_valid(wire) 
 static inline bool wire_is_fixed_gnd(uint8_t wire) { return wire_is_valid(wire) && s_wire_map[wire].kind == WIRE_FIXED_GND; }
 static inline int  wire_gpio(uint8_t wire)         { return wire_is_gpio(wire) ? s_wire_map[wire].gpio : -1; }
 
-/* ====== Active elements (trim set + extras that need no new wires) ====== */
+// ====== Active elements (trim set + extras that need no new wires) ======
 LED_struct LEDS[] = {
   {"status_washing", 10, 1, false},
   {"status_sensing",  9, 3, false},
@@ -112,7 +114,7 @@ const size_t SWITCH_COUNT = sizeof(SWITCHES)/ sizeof(SWITCHES[0]);
      {"HeavyDuty",     13, 4, false, false}
 */
 
-/* ====== Internals ====== */
+// ====== Internals ======
 static TaskHandle_t s_matrix_task = NULL;
 static SemaphoreHandle_t s_lock; // protects LEDS[] and SWITCHES[] updates
 
@@ -127,7 +129,7 @@ static uint8_t s_sw_cols [MAX_UNIQUE], s_sw_col_count  = 0;
 static uint8_t s_sw_cnt[sizeof(SWITCHES)/sizeof(SWITCHES[0])] = {0};
 static bool    s_sw_stable[sizeof(SWITCHES)/sizeof(SWITCHES[0])] = {0};
 
-/* ====== Helpers ====== */
+// ====== Helpers ======
 static void add_unique(uint8_t *arr, uint8_t *cnt, uint8_t v) {
   for (uint8_t i = 0; i < *cnt; ++i) if (arr[i] == v) return;
   if (*cnt < MAX_UNIQUE) arr[(*cnt)++] = v;
@@ -185,31 +187,40 @@ static void cols_mode_input_pullup_sw(const uint8_t *cols, uint8_t cnt) {
   }
 }
 
-/* ====== Validation ====== */
+// Non-blocking "micro-wait": yields to scheduler instead of busy-waiting.
+static inline void sleep_us_nonblocking(uint32_t us) {
+  if (us < 1000) {
+    taskYIELD(); // allow IDLE to feed the WDT
+  } else {
+    vTaskDelay(pdMS_TO_TICKS((us + 999) / 1000));
+  }
+}
+
+// ====== Validation ======
 static esp_err_t validate_mapping(void) {
   bool ok = true;
   for (size_t i = 0; i < LED_COUNT; ++i) {
     if (!wire_is_gpio(LEDS[i].row)) {
-      _LOG_E( "LED '%s' row W%u not mapped to a GPIO.", LEDS[i].name, LEDS[i].row);
+      _LOG_E("LED '%s' row W%u not mapped to a GPIO.", LEDS[i].name, LEDS[i].row);
       ok = false;
     }
     if (!(wire_is_gpio(LEDS[i].col) || wire_is_fixed_gnd(LEDS[i].col))) {
-      _LOG_E( "LED '%s' col W%u not mapped (GPIO or FIXED_GND required).", LEDS[i].name, LEDS[i].col);
+      _LOG_E("LED '%s' col W%u not mapped (GPIO or FIXED_GND required).", LEDS[i].name, LEDS[i].col);
       ok = false;
     }
     if (wire_is_fixed_gnd(LEDS[i].col)) {
-      _LOG_W( "LED '%s' uses FIXED_GND column W%u: cannot be gated per-LED; lights when row W%u is active.",
-               LEDS[i].name, LEDS[i].col, LEDS[i].row);
+      _LOG_W("LED '%s' uses FIXED_GND column W%u: cannot be gated per-LED; lights when row W%u is active.",
+             LEDS[i].name, LEDS[i].col, LEDS[i].row);
     }
   }
   for (size_t i = 0; i < SWITCH_COUNT; ++i) {
     if (!wire_is_gpio(SWITCHES[i].row)) {
-      _LOG_E( "SW '%s' row W%u not mapped to a GPIO.", SWITCHES[i].name, SWITCHES[i].row);
+      _LOG_E("SW '%s' row W%u not mapped to a GPIO.", SWITCHES[i].name, SWITCHES[i].row);
       ok = false;
     }
     if (!wire_is_gpio(SWITCHES[i].col)) {
-      _LOG_E( "SW '%s' col W%u not mapped to a GPIO (cannot read FIXED_GND as input).",
-               SWITCHES[i].name, SWITCHES[i].col);
+      _LOG_E("SW '%s' col W%u not mapped to a GPIO (cannot read FIXED_GND as input).",
+             SWITCHES[i].name, SWITCHES[i].col);
       ok = false;
     }
   }
@@ -231,20 +242,35 @@ static void preidle_all(void) {
   cols_mode_input_pullup_sw(s_sw_cols, s_sw_col_count);
 }
 
-/* ====== Matrix task ====== */
+// ====== Matrix task ======
 static void matrix_task(void *arg) {
-  const TickType_t tick_per_loop = pdMS_TO_TICKS(1000 / MATRIX_SCAN_HZ);
+  const TickType_t period_ticks = pdMS_TO_TICKS(1000 / MATRIX_SCAN_HZ);
+  const TickType_t sec_ticks    = pdMS_TO_TICKS(SW_SCAN_PERIOD_MS);
+  const TickType_t win_ticks    = pdMS_TO_TICKS(SW_SCAN_WINDOW_MS);
+
   const int led_row_idle = !LED_ROW_ON_LEVEL;
   const int led_col_idle = !LED_COL_ON_LEVEL;
   const uint8_t debounce_ticks = (DEBOUNCE_MS * MATRIX_SCAN_HZ) / 1000;
   if (debounce_ticks == 0) {
-    _LOG_W( "DEBOUNCE_MS too small for MATRIX_SCAN_HZ; effective 1 tick.");
+    _LOG_W("DEBOUNCE_MS too small for MATRIX_SCAN_HZ; effective 1 tick.");
   }
 
   preidle_all();
 
+  TickType_t last_wake  = xTaskGetTickCount();
+  TickType_t sec_anchor = last_wake;  // start of current 1s cycle
+
   while (1) {
-    // Clear Pressed_NOW at the start of the scan loop
+    // Decide whether this frame should scan switches (duty-cycle window)
+    TickType_t now = xTaskGetTickCount();
+    TickType_t phase = now - sec_anchor;
+    if (phase >= sec_ticks) {
+      sec_anchor = now;
+      phase = 0;
+    }
+    bool scan_switches_this_frame = (phase < win_ticks);
+
+    // Clear Pressed_NOW at the start of the frame
     xSemaphoreTake(s_lock, portMAX_DELAY);
     for (size_t i = 0; i < SWITCH_COUNT; ++i) {
       SWITCHES[i].Pressed_NOW = false;
@@ -273,16 +299,12 @@ static void matrix_task(void *arg) {
         if (wire_is_gpio(col_wire)) {
           int cg = wire_gpio(col_wire);
           set_gpio_output(cg, LED_COL_ON_LEVEL);
-        } else if (wire_is_fixed_gnd(col_wire)) {
-          // Nothing to do: fixed low; this LED will light as long as the row is active.
-          // NOTE: If you expected this LED to be OFF while other LEDs in the same row are ON,
-          //       that is not possible with a fixed-GND column.
-        }
+        } // FIXED_GND will light automatically when row is active
       }
       xSemaphoreGive(s_lock);
 
-      // Hold briefly for visibility
-      esp_rom_delay_us(500); // ~0.5 ms per row; adjust as needed
+      // Brief hold for visibility (scheduler-friendly)
+      sleep_us_nonblocking(500);  // ~0.5 ms
 
       // Deactivate row and idle GPIO columns
       set_gpio_output(rg, led_row_idle);
@@ -293,57 +315,64 @@ static void matrix_task(void *arg) {
       }
     }
 
-    /* ---- Switch rows scan ---- */
-    for (uint8_t r = 0; r < s_sw_row_count; ++r) {
-      uint8_t row_wire = s_sw_rows[r];
-      int rg = wire_gpio(row_wire);
-      if (rg < 0) continue;
+    /* ---- Switch rows scan (only within the active window) ---- */
+    if (scan_switches_this_frame) {
+      for (uint8_t r = 0; r < s_sw_row_count; ++r) {
+        uint8_t row_wire = s_sw_rows[r];
+        int rg = wire_gpio(row_wire);
+        if (rg < 0) continue;
 
-      // Prepare switch columns as inputs with pullups (where available)
-      cols_mode_input_pullup_sw(s_sw_cols, s_sw_col_count);
+        // Prepare switch columns as inputs with pullups (where available)
+        cols_mode_input_pullup_sw(s_sw_cols, s_sw_col_count);
 
-      // Activate this row for scanning
-      set_gpio_output(rg, SW_ROW_ACTIVE_LEVEL);
-      esp_rom_delay_us(50); // settle
+        // Activate this row for scanning
+        set_gpio_output(rg, SW_ROW_ACTIVE_LEVEL);
+        sleep_us_nonblocking(50);  // settle (scheduler-friendly)
 
-      // Sample each switch on this row
-      xSemaphoreTake(s_lock, portMAX_DELAY);
-      for (size_t i = 0; i < SWITCH_COUNT; ++i) {
-        if (SWITCHES[i].row != row_wire) continue;
-        int cg = wire_gpio(SWITCHES[i].col);
-        int level = read_gpio(cg);
-        bool pressed_sample = (level == SW_COL_PRESSED_LEVEL);
+        // Sample each switch on this row
+        xSemaphoreTake(s_lock, portMAX_DELAY);
+        for (size_t i = 0; i < SWITCH_COUNT; ++i) {
+          if (SWITCHES[i].row != row_wire) continue;
+          int cg = wire_gpio(SWITCHES[i].col);
+          int level = read_gpio(cg);
+          bool pressed_sample = (level == SW_COL_PRESSED_LEVEL);
 
-        // Debounce counter
-        if (pressed_sample) {
-          if (s_sw_cnt[i] < 255) s_sw_cnt[i]++;
-        } else {
-          if (s_sw_cnt[i] > 0) s_sw_cnt[i]--;
+          // Debounce counter
+          if (pressed_sample) {
+            if (s_sw_cnt[i] < 255) s_sw_cnt[i]++;
+          } else {
+            if (s_sw_cnt[i] > 0) s_sw_cnt[i]--;
+          }
+
+          bool was_stable = s_sw_stable[i];
+          bool new_stable = was_stable;
+
+          if (!was_stable && s_sw_cnt[i] >= debounce_ticks) {
+            new_stable = true; // just became pressed
+            SWITCHES[i].Pressed_NOW = true;
+            SWITCHES[i].Pressed_Registered = true;
+          } else if (was_stable && s_sw_cnt[i] == 0) {
+            new_stable = false; // released
+          }
+          s_sw_stable[i] = new_stable;
         }
+        xSemaphoreGive(s_lock);
 
-        bool was_stable = s_sw_stable[i];
-        bool new_stable = was_stable;
+        // Deactivate row
+        set_gpio_output(rg, !SW_ROW_ACTIVE_LEVEL);
 
-        if (!was_stable && s_sw_cnt[i] >= debounce_ticks) {
-          new_stable = true; // just became pressed
-          SWITCHES[i].Pressed_NOW = true;
-          SWITCHES[i].Pressed_Registered = true;
-        } else if (was_stable && s_sw_cnt[i] == 0) {
-          new_stable = false; // released
-        }
-        s_sw_stable[i] = new_stable;
+        // If we ran out of window mid-scan, exit early
+        now = xTaskGetTickCount();
+        if ((now - sec_anchor) >= win_ticks) break;
       }
-      xSemaphoreGive(s_lock);
-
-      // Deactivate row
-      set_gpio_output(rg, !SW_ROW_ACTIVE_LEVEL);
     }
 
-    vTaskDelay(tick_per_loop);
+    // Keep precise cadence; yields to scheduler (feeds WDT)
+    vTaskDelayUntil(&last_wake, period_ticks);
   }
 }
 
-/* ====== Name lookup ====== */
+// ====== Name lookup ======
 static int find_led_idx(const char *name) {
   for (size_t i = 0; i < LED_COUNT; ++i) if (strcmp(LEDS[i].name, name) == 0) return (int)i;
   return -1;
@@ -353,7 +382,7 @@ static int find_sw_idx(const char *name) {
   return -1;
 }
 
-/* ====== Public API: wire mapping ====== */
+// ====== Public API: wire mapping ======
 esp_err_t Matrix_BindWire(uint8_t wire, gpio_num_t gpio_num) {
   if (!wire_is_valid(wire)) return ESP_ERR_INVALID_ARG;
   s_wire_map[wire].kind = WIRE_GPIO;
@@ -368,35 +397,38 @@ esp_err_t Matrix_BindWireFixedGND(uint8_t wire) {
   return ESP_OK;
 }
 
-/* ====== Public API: initialization ====== */
+// ====== Task start ======
 static void start_matrix_task_once(void) {
   if (s_matrix_task) return;
-  xTaskCreate(matrix_task, "panel_matrix", MATRIX_TASK_STACK, NULL, MATRIX_TASK_PRIO, &s_matrix_task);
+  // Pin to core 1 to leave IDLE0 freer for WDT (optional but helpful)
+  xTaskCreatePinnedToCore(matrix_task, "panel_matrix", MATRIX_TASK_STACK, NULL,
+                          MATRIX_TASK_PRIO, &s_matrix_task, 1 /* core 1 */);
 }
 
+// ====== Public API: initialization ======
 esp_err_t _init_LED(void) {
   if (!s_lock) s_lock = xSemaphoreCreateMutex();
   derive_sets();
-  ESP_RETURN_ON_ERROR(validate_mapping(), TAG, "LED mapping invalid");
-  // Ensure idle states before starting
+  esp_err_t r = validate_mapping();
+  if (r != ESP_OK) return r;
   preidle_all();
   start_matrix_task_once();
-  _LOG_I( "LED init: rows=%u cols=%u", s_led_row_count, s_led_col_count);
+  _LOG_I("LED init: rows=%u cols=%u", s_led_row_count, s_led_col_count);
   return ESP_OK;
 }
 
 esp_err_t _init_Switch(void) {
   if (!s_lock) s_lock = xSemaphoreCreateMutex();
   derive_sets();
-  ESP_RETURN_ON_ERROR(validate_mapping(), TAG, "Switch mapping invalid");
-  // Ensure idle states before starting
+  esp_err_t r = validate_mapping();
+  if (r != ESP_OK) return r;
   preidle_all();
   start_matrix_task_once();
-  _LOG_I( "SW init: rows=%u cols=%u", s_sw_row_count, s_sw_col_count);
+  _LOG_I("SW init: rows=%u cols=%u", s_sw_row_count, s_sw_col_count);
   return ESP_OK;
 }
 
-/* ====== Public API: LEDs ====== */
+// ====== Public API: LEDs ======
 esp_err_t LED_Toggle(const char *name, led_cmd_t op) {
   int idx = find_led_idx(name);
   if (idx < 0) return ESP_ERR_NOT_FOUND;
@@ -418,7 +450,7 @@ bool LED_Get(const char *name) {
   return v;
 }
 
-/* ====== Public API: Switches ====== */
+// ====== Public API: Switches ======
 void Switch_ClearRegistered(const char *name) {
   int idx = find_sw_idx(name);
   if (idx < 0) return;
@@ -455,16 +487,15 @@ bool Switch_PressedNow(const char *name) {
   return v;
 }
 
-/* ====== Default harness mapping ======
-   From your comment:
-   Harness wires used: W1,W2,W3,W4,W5,W8,W9,W10,W12
-   - status_washing : A=W10 (GPIO17), C=W1 (GND)
-   - status_sensing : A=W9  (GPIO18), C=W3 (GPIO16)
-   - status_drying  : A=W10 (GPIO17), C=W4 (GPIO4)
-   - status_clean   : A=W8  (GPIO19), C=W5 (GPIO5)
-   - Start : column=W12, return=W4 (GPIO4)
-   - Cancel: column=W12, return=W2 (GPIO35)
-*/
+// ====== Default harness mapping ======
+// From your comment:
+// Harness wires used: W1,W2,W3,W4,W5,W8,W9,W10,W12
+//  - status_washing : A=W10 (GPIO17), C=W1 (GND)
+//  - status_sensing : A=W9  (GPIO18), C=W3 (GPIO16)
+//  - status_drying  : A=W10 (GPIO17), C=W4 (GPIO4)
+//  - status_clean   : A=W8  (GPIO19), C=W5 (GPIO5)
+//  - Start : column=W12, return=W4 (GPIO4)
+//  - Cancel: column=W12, return=W2 (GPIO35)
 void Panel_BindDefaultGPIOMap(void) {
   // W1 is physically GND on the harness
   Matrix_BindWireFixedGND(1);
