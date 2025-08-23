@@ -35,13 +35,10 @@
 #define ACTION_TASK_PRIO   5
 
 // ---- Externals you already have in your project ----
-extern status_struct ActiveStatus;
 
 // run_program task entry (provided by your program engine)
-extern void run_program(void *);
 
 // Optional helper you may already have; if not, we set Program via strncpy.
-extern void setCharArray(char *dst, const char *src);
 
 // ---- Module state ----
 static httpd_handle_t s_server       = NULL;
