@@ -52,6 +52,12 @@ float analog_get_weighted_avg_unknown_r_ohm(void);
 uint32_t analog_get_window_size(void);
 uint32_t analog_get_samples_collected(void);
 
+void analog_get_last_status(char *out, size_t out_sz);
+
+/* Convenience: direct pointer to the internal buffer (read-only).
+   Note: pointer remains valid, but contents change asynchronously. */
+const char *analog_last_status_cstr(void);
+
 #ifdef __cplusplus
 }
 #endif

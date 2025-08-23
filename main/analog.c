@@ -15,6 +15,55 @@
 #include "analog.h"
 #include "dishwasher_programs.h"   /* provides _LOG_I(...) */
 
+
+
+#include <stdarg.h>
+#include "freertos/semphr.h"
+
+/* Last formatted status line (readable from /status) */
+static char s_analog_last_status[192] = "analog: waiting for first sample";
+static SemaphoreHandle_t s_analog_last_lock = NULL;
+
+/* Format + store (and also log) the status line */
+static void analog_set_last_statusf(const char *fmt, ...) {
+  if (!s_analog_last_lock) s_analog_last_lock = xSemaphoreCreateMutex();
+
+  char buf[sizeof(s_analog_last_status)];
+  va_list ap; va_start(ap, fmt);
+  vsnprintf(buf, sizeof(buf), fmt, ap);
+  va_end(ap);
+
+  if (s_analog_last_lock) xSemaphoreTake(s_analog_last_lock, portMAX_DELAY);
+  strncpy(s_analog_last_status, buf, sizeof(s_analog_last_status) - 1);
+  s_analog_last_status[sizeof(s_analog_last_status) - 1] = '\0';
+  if (s_analog_last_lock) xSemaphoreGive(s_analog_last_lock);
+
+  _LOG_I("%s", s_analog_last_status);  /* keep your existing log output */
+}
+
+/* Public getters */
+void analog_get_last_status(char *out, size_t out_sz) {
+  if (!out || out_sz == 0) return;
+  if (!s_analog_last_lock) {
+    /* first-use fallback */
+    strncpy(out, s_analog_last_status, out_sz - 1);
+    out[out_sz - 1] = '\0';
+    return;
+  }
+  xSemaphoreTake(s_analog_last_lock, portMAX_DELAY);
+  strncpy(out, s_analog_last_status, out_sz - 1);
+  out[out_sz - 1] = '\0';
+  xSemaphoreGive(s_analog_last_lock);
+}
+
+const char *analog_last_status_cstr(void) {
+  return s_analog_last_status; /* read-only, content changes asynchronously */
+}
+
+
+
+
+
 /* ===== Internal state ===== */
 typedef struct {
   analog_config_t cfg;
@@ -211,12 +260,15 @@ static void analog_task_(void *arg) {
       g.seconds_since_log = 0;
       xSemaphoreGive(g.mtx);
 
-      _LOG_I(
-        "raw=%d Vout=%.3fV Rx=%.1fΩ | wavg(%lus): V=%.3fV R=%.1fΩ | n=%lu",
-        raw, vout, rx,
-        (unsigned long)g.cfg.window_sec,
-        (float)wavg_v, (float)wavg_r, (unsigned long)n
-      );
+
+analog_set_last_statusf(
+  "raw=%d Vout=%.3fV Rx=%.1fΩ | wavg(%lus): V=%.3fV R=%.1fΩ | n=%lu",
+  raw, vout, rx,
+  (unsigned long)g.cfg.window_sec,
+  (float)wavg_v, (float)wavg_r, (unsigned long)n
+);
+
+    
     }
 
     vTaskDelayUntil(&last_wake, period);
@@ -267,6 +319,7 @@ bool analog_init(const analog_config_t *cfg) {
     (unsigned long)g.cfg.sample_period_ms,
     (unsigned long)g.cfg.log_period_sec,
     (unsigned long)g.cfg.window_sec
+    
   );
   return true;
 }
