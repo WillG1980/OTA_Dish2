@@ -13,8 +13,10 @@ git diff --cached --quiet || (
   if errorlevel 1 (echo Commit failed & popd & exit /b 1)
   set DID_COMMIT=1
 )
+for /f %%i in ('git rev-list --count HEAD') do set VERSION=%%i
 echo %%i > main\pushcommit
 git rev-list --all >> main\pushcommit
+echo VERSION: !VERSION!
 goto :skip
 rem --- Version + commit info ---
 for /f %%i in ('git rev-list --count HEAD') do set VERSION=%%i
@@ -72,7 +74,7 @@ if errorlevel 1 (
 )
 
 :skip
-esp_build.bat 
+rem esp_build.bat 
 exit /b 0
 
 
