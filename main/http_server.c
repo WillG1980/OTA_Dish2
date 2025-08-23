@@ -6,6 +6,7 @@
 #include "freertos/task.h"
 #include <string.h>
 #include <strings.h> // strcasecmp
+#include <dishwasher_programs.h>
 
 // Project headers (adjust paths if needed)
 #include "dishwasher_programs.h" // run_program(), ActiveStatus, setCharArray(...)
