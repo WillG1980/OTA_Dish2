@@ -225,7 +225,11 @@ void app_main(void) {
   Matrix_BindWire(12, GPIO_NUM_23);
 
   _start_temp_monitor();
-
+  
+  vTaskDelay(pdMS_TO_TICKS(2000));
+  _init_LED();
+  vTaskDelay(pdMS_TO_TICKS(2000));
+  
   LED_Toggle("status_washing", LED_ON);
   vTaskDelay(pdMS_TO_TICKS(2000));
   LED_Toggle("status_washing", LED_OFF);
@@ -255,7 +259,6 @@ vTaskDelay(pdMS_TO_TICKS(2000));
   LED_Toggle("switch_4", LED_OFF);
   
 
-  _init_LED();
   
   _LOG_I("Booting: %s", boot_partition_cstr());
   _LOG_I("Running: %s", running_partition_cstr());
