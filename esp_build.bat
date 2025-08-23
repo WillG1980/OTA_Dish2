@@ -13,17 +13,19 @@ git diff --cached --quiet || (
   if errorlevel 1 (echo Commit failed & popd & exit /b 1)
   set DID_COMMIT=1
 )
-for /f %%i in ('git rev-list --count HEAD') do set VERSION=%%i
-echo %%i > main\pushcommit
-git rev-list --all >> main\pushcommit
-echo VERSION: !VERSION!
-goto :skip
+REM for /f %%i in ('git rev-list --count HEAD') do set VERSION=%%i
+REM echo %%i > main\pushcommit
+REM git rev-list --all >> main\pushcommit
+REM echo VERSION: !VERSION!
+REM goto :skip
+
+
 rem --- Version + commit info ---
 for /f %%i in ('git rev-list --count HEAD') do set VERSION=%%i
 for /f %%i in ('git rev-parse --short HEAD') do set SHORTSHA=%%i
 echo Building commit !SHORTSHA! as build !VERSION! ...
 rem --- Build ---
-rem idf.py build
+idf.py build
 set BUILD_RC=%ERRORLEVEL%
 
 rem --- Tag result (always) ---
@@ -73,8 +75,8 @@ if errorlevel 1 (
   git push -u origin "!BRANCH!" || (echo Initial upstream push failed & exit /b 1)
 )
 
-:skip
-rem esp_build.bat 
+REM :skip
+REM esp_build.bat 
 exit /b 0
 
 
