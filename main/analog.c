@@ -106,7 +106,7 @@ static esp_err_t init_adc_oneshot(void) {
   };
   ESP_ERROR_CHECK(adc_oneshot_config_channel(s_adc, TEMP_ADC_CH, &ch_cfg));
 
-  _LOG_I(TAG, "ADC oneshot set up on ADC1_CH6 (GPIO34)");
+  _LOG_I("ADC oneshot set up on ADC1_CH6 (GPIO34)");
   return ESP_OK;
 }
 
@@ -140,9 +140,9 @@ static void temp_sampler_task(void *arg) {
       float wav = weighted_avg_raw_last_window(t_now);
       if (!isnan(wav)) {
         // EXACT string required by you (with your macro style):
-        _LOG_I(TAG, "Current ADC reading: %d", (int)lroundf(wav));
+        _LOG_I("Current ADC reading: %d", (int)lroundf(wav));
       } else {
-        _LOG_I(TAG, "Current ADC reading: N/A");
+        _LOG_I("Current ADC reading: N/A");
       }
       last_log = t_now;
     }
@@ -159,7 +159,7 @@ static void temp_sampler_task(void *arg) {
 // ---- Public API ----
 void _start_temp_monitor(void) {
   if (s_task) {
-    _LOG_I(TAG, "temp monitor already running");
+    _LOG_I("temp monitor already running");
     return;
   }
   if (init_adc_oneshot() != ESP_OK) {
