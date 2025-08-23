@@ -246,6 +246,37 @@ static actions_t parse_action_from_body(httpd_req_t *req) {
    - Auto-refresh /status every 10s
    - Also refresh /status 1s after any button click
 */
+static esp_err_t action_post_handler(httpd_req_t *req) {
+  set_common_headers(req);
+  httpd_resp_set_type(req, "text/plain; charset=utf-8");
+
+  actions_t act = parse_action_from_body(req);
+  if (act == ACTION_NONE) {
+    set_last_action_msg("invalid action (missing/unknown)");
+    httpd_resp_set_status(req, "400 Bad Request");
+    httpd_resp_sendstr(req, "missing or invalid action");
+    return ESP_OK;
+  }
+
+  if (!action_queue || xQueueSend(action_queue, &act, 0) != pdPASS) {
+    UBaseType_t depth = action_queue ? uxQueueMessagesWaiting(action_queue) : 0;
+    set_last_action_msg("queue busy (depth=%u)", (unsigned)depth);
+    httpd_resp_set_status(req, "503 Service Unavailable");
+    httpd_resp_sendstr(req, "busy");
+    return ESP_OK;
+  }
+
+  UBaseType_t pending = uxQueueMessagesWaiting(action_queue);
+  char msg[96];
+  snprintf(msg, sizeof(msg), "queued %s; queue depth=%u\n",
+           ACTIONS[act].name ? ACTIONS[act].name : "?",
+           (unsigned)pending);
+
+  set_last_action_msg("%s", msg);   // make it visible to /status
+  httpd_resp_sendstr(req, msg);
+  return ESP_OK;
+}
+
 static esp_err_t root_get_handler(httpd_req_t *req) {
   set_common_headers(req);
   httpd_resp_set_type(req, "text/html; charset=utf-8");
@@ -331,6 +362,7 @@ static esp_err_t action_options_handler(httpd_req_t *req) {
 
 /* Minimal status page */
 static esp_err_t status_get_handler(httpd_req_t *req) {
+  
   char line[192];
   analog_get_last_status(line, sizeof(line));
 
