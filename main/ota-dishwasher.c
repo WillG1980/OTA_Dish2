@@ -213,20 +213,18 @@ void app_main(void) {
   gpio_mask_config_outputs(ALL_ACTORS);
   gpio_mask_clear(HEAT | SPRAY | INLET | DRAIN | SOAP); // set all pins to off
 
-
   Matrix_BindWireFixedGND(1);
   // Harness → ESP32 GPIO
-  Matrix_BindWire(2,  GPIO_NUM_35);  // Cancel return (input-only; add ext PU)
-  Matrix_BindWire(3,  GPIO_NUM_16);  // status_sensing column
-  Matrix_BindWire(4,  GPIO_NUM_4);   // status_drying column + Start return
-  Matrix_BindWire(5,  GPIO_NUM_5);   // status_clean column
-  Matrix_BindWire(8,  GPIO_NUM_19);  // status_clean anode row
-  Matrix_BindWire(9,  GPIO_NUM_18);  // status_sensing anode row
-  Matrix_BindWire(10, GPIO_NUM_17);  // status_washing/status_drying anode row
-  Matrix_BindWire(12, GPIO_NUM_23);  
+  Matrix_BindWire(2, GPIO_NUM_35);  // Cancel return (input-only; add ext PU)
+  Matrix_BindWire(3, GPIO_NUM_16);  // status_sensing column
+  Matrix_BindWire(4, GPIO_NUM_4);   // status_drying column + Start return
+  Matrix_BindWire(5, GPIO_NUM_5);   // status_clean column
+  Matrix_BindWire(8, GPIO_NUM_19);  // status_clean anode row
+  Matrix_BindWire(9, GPIO_NUM_18);  // status_sensing anode row
+  Matrix_BindWire(10, GPIO_NUM_17); // status_washing/status_drying anode row
+  Matrix_BindWire(12, GPIO_NUM_23);
 
- 
-  //_init_LED();
+  _init_LED();
   _start_temp_monitor();
 
   LED_Toggle("status_washing", LED_ON);
@@ -253,10 +251,8 @@ void app_main(void) {
   ESP_ERROR_CHECK(nvs_flash_init());
   _init_setup();
 
-
-
   server = start_webserver();
-//  check_and_perform_ota();
+  //  check_and_perform_ota();
   vTaskDelay(pdMS_TO_TICKS(10000));
 
   // Keep main alive but yield CPU — do not busy-loop
