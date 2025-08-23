@@ -63,7 +63,7 @@ static wire_map_t s_wire_map[MAX_WIRE + 1] = {
 
 static inline bool wire_is_valid(uint8_t wire)     { return wire > 0 && wire <= MAX_WIRE; }
 static inline bool wire_is_gpio(uint8_t wire)      { return wire_is_valid(wire) && s_wire_map[wire].kind == WIRE_GPIO; }
-//static inline bool wire_is_fixed_gnd(uint8_t wire) { return wire_is_valid(wire) && s_wire_map[wire].kind == WIRE_FIXED_GND; }
+static inline bool wire_is_fixed_gnd(uint8_t wire);// { return wire_is_valid(wire) && s_wire_map[wire].kind == WIRE_FIXED_GND; }
 static inline int  wire_gpio(uint8_t wire)         { return wire_is_gpio(wire) ? s_wire_map[wire].gpio : -1; }
 
 /* ====== Active elements (trim set + extras that need no new wires) ====== */
