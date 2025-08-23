@@ -12,7 +12,7 @@
 #ifndef APP_VERSION
 #define APP_VERSION VERSION
 #endif
-
+#include <analog.h>
 #include "io.h" 
 #include "driver/gpio.h"
 #include "esp_crt_bundle.h"
