@@ -74,7 +74,7 @@ static bool adc_setup_(const analog_config_t *cfg) {
     };
     if (adc_cali_create_scheme_curve_fitting(&cal_cfg, &g.cali_handle) == ESP_OK) {
       g.cali_enabled = true;
-      _LOG_I("ANALOG", "ADC calibration: curve fitting enabled");
+      _LOG_I("ADC calibration: curve fitting enabled");
     }
   }
 #endif
@@ -88,7 +88,7 @@ static bool adc_setup_(const analog_config_t *cfg) {
     };
     if (adc_cali_create_scheme_line_fitting(&cal_cfg, &g.cali_handle) == ESP_OK) {
       g.cali_enabled = true;
-      _LOG_I("ANALOG", "ADC calibration: line fitting enabled");
+      _LOG_I("ADC calibration: line fitting enabled");
     }
   }
 #endif
@@ -243,7 +243,7 @@ static void analog_task_(void *arg) {
     vTaskDelayUntil(&last_wake, period);
   }
 
-  _LOG_I("ANALOG", "analog_task exiting");
+  _LOG_I("analog_task exiting");
   vTaskDelete(NULL);
 }
 
@@ -281,8 +281,7 @@ bool analog_init(const analog_config_t *cfg) {
     return false;
   }
 
-  _LOG_I("ANALOG",
-         "init: unit=%d ch=%d atten=%d Vs=%.2fV Rk=%.1fΩ period=%lums log=%lus window=%lus (weighted avg)",
+  _LOG_I("init: unit=%d ch=%d atten=%d Vs=%.2fV Rk=%.1fΩ period=%lums log=%lus window=%lus (weighted avg)",
          (int)g.cfg.unit, (int)g.cfg.channel, (int)g.cfg.atten,
          g.cfg.source_voltage_v, g.cfg.known_resistance_ohm,
          (unsigned long)g.cfg.sample_period_ms,
@@ -317,7 +316,7 @@ bool analog_start(void) {
     _LOG_E("ANALOG", "failed to create analog_task");
     return false;
   }
-  _LOG_I("ANALOG", "analog_task started");
+  _LOG_I("analog_task started");
   return true;
 }
 
@@ -405,6 +404,6 @@ bool _start_temp_monitor(void) {
     _LOG_E("ANALOG", "_start_temp_monitor: start failed");
     return false;
   }
-  _LOG_I("ANALOG", "temperature monitor started (1 Hz, weighted 60s avg, log every 30s)");
+  _LOG_I("ANALOG Operature monitor started (1 Hz, weighted 60s avg, log every 30s)");
   return true;
 }
