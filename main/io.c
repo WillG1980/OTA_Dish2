@@ -479,3 +479,116 @@ void Panel_BindDefaultGPIOMap(void) {
   Matrix_BindWire(10, GPIO_NUM_17);  // status_washing/status_drying anode row
   Matrix_BindWire(12, GPIO_NUM_23);  // shared switch column (Start/Cancel)
 }
+
+
+
+
+
+
+
+
+#include "io.h"                    // for LED_struct, LEDS[], LED_COUNT
+#include "dishwasher_programs.h"   // for _LOG_I(...)
+#include "driver/gpio.h"
+#include "freertos/FreeRTOS.h"
+#include "freertos/task.h"
+
+/* Active levels used by your panel (match io.c defaults) */
+#define ROW_ON_LEVEL   1
+#define COL_ON_LEVEL   0
+#define ROW_IDLE_LEVEL (!ROW_ON_LEVEL)
+#define COL_IDLE_LEVEL (!COL_ON_LEVEL)
+
+/* ---- Default harness wire -> GPIO mapping (from your notes) ----
+   W1: FIXED_GND
+   W2 -> GPIO35   (input-only)
+   W3 -> GPIO16
+   W4 -> GPIO4
+   W5 -> GPIO5
+   W8 -> GPIO19
+   W9 -> GPIO18
+   W10-> GPIO17
+   W12-> GPIO23
+*/
+static inline int wire_to_gpio(uint8_t w) {
+    switch (w) {
+        case 2:  return GPIO_NUM_35;  // input-only; won't be used for LED rows
+        case 3:  return GPIO_NUM_16;
+        case 4:  return GPIO_NUM_4;
+        case 5:  return GPIO_NUM_5;
+        case 8:  return GPIO_NUM_19;
+        case 9:  return GPIO_NUM_18;
+        case 10: return GPIO_NUM_17;
+        case 12: return GPIO_NUM_23;
+        default: return -1;           // includes W1 (fixed GND) and any unused
+    }
+}
+static inline bool wire_is_fixed_gnd(uint8_t w) { return (w == 1); }
+
+/* Configure a GPIO as output and drive to level, if valid */
+static inline void set_out_level_if_valid(int gpio, int level) {
+    if (gpio < 0) return;
+    gpio_set_direction((gpio_num_t)gpio, GPIO_MODE_OUTPUT);
+    gpio_set_level((gpio_num_t)gpio, level);
+}
+
+/* Light each LED (by wire mapping) for 5 seconds, sequentially. */
+void _test_leds(void) {
+    _LOG_I("LED test: %u LEDs, 5s each (direct GPIO drive)", (unsigned)LED_COUNT);
+
+    /* Pre-idle: set all rows/cols we might touch to their idle levels */
+    for (size_t i = 0; i < LED_COUNT; ++i) {
+        int rg = wire_to_gpio(LEDS[i].row);
+        int cg = wire_to_gpio(LEDS[i].col);
+        set_out_level_if_valid(rg, ROW_IDLE_LEVEL);
+        if (!wire_is_fixed_gnd(LEDS[i].col)) {
+            set_out_level_if_valid(cg, COL_IDLE_LEVEL);
+        }
+    }
+
+    /* Walk LEDs one by one */
+    for (size_t i = 0; i < LED_COUNT; ++i) {
+        const uint8_t row_w = LEDS[i].row;
+        const uint8_t col_w = LEDS[i].col;
+        const int rg = wire_to_gpio(row_w);
+        const int cg = wire_to_gpio(col_w);
+
+        if (rg < 0) {
+            _LOG_I("Skip '%s': row W%u has no GPIO", LEDS[i].name, row_w);
+            continue;
+        }
+
+        /* Idle all columns we might touch to avoid ghosting */
+        for (size_t j = 0; j < LED_COUNT; ++j) {
+            int cg_all = wire_to_gpio(LEDS[j].col);
+            if (!wire_is_fixed_gnd(LEDS[j].col)) {
+                set_out_level_if_valid(cg_all, COL_IDLE_LEVEL);
+            }
+        }
+
+        /* Drive this LED’s column (if GPIO) and row */
+        if (!wire_is_fixed_gnd(col_w)) {
+            if (cg < 0) {
+                _LOG_I("Skip '%s': col W%u has no GPIO", LEDS[i].name, col_w);
+                continue;
+            }
+            set_out_level_if_valid(cg, COL_ON_LEVEL);
+        }
+        set_out_level_if_valid(rg, ROW_ON_LEVEL);
+
+        _LOG_I("ON  '%s' (row W%u -> GPIO%d, col W%u%s%s) for 5s",
+               LEDS[i].name, row_w, rg, col_w,
+               wire_is_fixed_gnd(col_w) ? " FIXED_GND" : " -> GPIO",
+               wire_is_fixed_gnd(col_w) ? "" : (cg >= 0 ? "" : "(invalid)"));
+
+        vTaskDelay(pdMS_TO_TICKS(5000));
+
+        /* Back to idle for the LED we just lit */
+        set_out_level_if_valid(rg, ROW_IDLE_LEVEL);
+        if (!wire_is_fixed_gnd(col_w)) {
+            set_out_level_if_valid(cg, COL_IDLE_LEVEL);
+        }
+    }
+
+    _LOG_I("LED test: done");
+}

@@ -82,7 +82,7 @@ bool Switch_IsHeld(const char *name);
 
 /** True only on the scan when the press edge was detected (does not clear). */
 bool Switch_PressedNow(const char *name);
-
+void _test_leds(void);
 #ifdef __cplusplus
 } // extern "C"
 #endif
