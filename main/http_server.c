@@ -243,7 +243,6 @@ static esp_err_t root_get_handler(httpd_req_t *req) {
   httpd_resp_sendstr_chunk(req, NULL);
   return ESP_OK;
 }
-
 /* POST /action: primary API (GET support removed) */
 static esp_err_t action_post_handler(httpd_req_t *req) {
   set_common_headers(req);
