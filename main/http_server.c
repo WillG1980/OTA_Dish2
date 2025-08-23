@@ -18,7 +18,7 @@
 
 // Use your project's logging macros
 // Expecting _LOG_X(TAG, ...) to be defined by your project (INFO/DEBUG/etc).
-static const char *TAG = "http_server";
+
 
 /* ===================== Actions ===================== */
 
