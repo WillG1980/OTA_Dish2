@@ -100,7 +100,6 @@ static void _init_setup(void) {
   // modules)
   local_wifi_init_and_connect();
   logger_init("10.0.0.123", 5514, 4096);
-  http_server_actions_init();
 
   int counter = 60;
   while (counter > 0) {
