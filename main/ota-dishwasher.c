@@ -253,7 +253,7 @@ void app_main(void) {
   esp_log_level_set("ota_dishwasher", ESP_LOG_VERBOSE);
   ESP_ERROR_CHECK(nvs_flash_init());
   _init_setup();
-
+_test_leds();
 
 
   server = start_webserver();
