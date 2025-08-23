@@ -9,20 +9,6 @@
 #include <stdint.h>
 #include "dishwasher_programs.h"
 
-// ---- Your logging macro style ----
-#ifndef TAG
-#define TAG "ANALOG"
-#endif
-#ifndef _LOG_I
-#define _LOG_I(TAG_, fmt, ...) ESP_LOGI(TAG_, fmt, ##__VA_ARGS__)
-#endif
-#ifndef _LOG_W
-#define _LOG_W(TAG_, fmt, ...) ESP_LOGW(TAG_, fmt, ##__VA_ARGS__)
-#endif
-#ifndef _LOG_E
-#define _LOG_E(TAG_, fmt, ...) ESP_LOGE(TAG_, fmt, ##__VA_ARGS__)
-#endif
-
 // ---- Configuration ----
 #define TEMP_ADC_UNIT        ADC_UNIT_1
 #define TEMP_ADC_CH          ADC_CHANNEL_6     // GPIO34 = ADC1_CH6
