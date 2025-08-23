@@ -13,13 +13,13 @@ git diff --cached --quiet || (
   if errorlevel 1 (echo Commit failed & popd & exit /b 1)
   set DID_COMMIT=1
 )
-
+echo %%i > main\pushcommit
+git rev-list --all >> main\pushcommit
+goto :skip
 rem --- Version + commit info ---
 for /f %%i in ('git rev-list --count HEAD') do set VERSION=%%i
 for /f %%i in ('git rev-parse --short HEAD') do set SHORTSHA=%%i
 echo Building commit !SHORTSHA! as build !VERSION! ...
-echo %%i > main\pushcommit
-git rev-list --all >> main\pushcommit
 rem --- Build ---
 rem idf.py build
 set BUILD_RC=%ERRORLEVEL%
@@ -70,4 +70,9 @@ if errorlevel 1 (
   echo No upstream set; pushing with -u to origin/!BRANCH! ...
   git push -u origin "!BRANCH!" || (echo Initial upstream push failed & exit /b 1)
 )
+
+:skip
+esp_build.bat 
 exit /b 0
+
+
