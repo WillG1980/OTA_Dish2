@@ -1,9 +1,13 @@
-// http_server.c — POST-only, ACTION_MAX + queue snapshot logging
+// http_server.c — POST-only, ACTION_MAX + queue snapshot logging + status pane
 #include "esp_http_server.h"
 #include "esp_log.h"
 #include "freertos/FreeRTOS.h"
 #include "freertos/queue.h"
 #include "freertos/task.h"
+#include "freertos/semphr.h"
+#include "esp_system.h"          // esp_restart()
+#include <stdio.h>
+#include <stdarg.h>
 #include <string.h>
 #include <strings.h>  // strcasecmp
 
@@ -14,6 +18,7 @@
 
 // Use your project's logging macros
 // Expecting _LOG_X(TAG, ...) to be defined by your project (INFO/DEBUG/etc).
+static const char *TAG = "http_server";
 
 /* ===================== Actions ===================== */
 
@@ -143,6 +148,28 @@ static void build_queue_snapshot(char *buf, size_t buf_sz) {
   }
 }
 
+/* ========== Last action message (exposed via /status) ========== */
+static char s_last_action_msg[256] = "idle";
+static SemaphoreHandle_t s_last_action_lock = NULL;
+
+static inline void set_last_action_msg(const char *fmt, ...) {
+  if (!s_last_action_lock) s_last_action_lock = xSemaphoreCreateMutex();
+  if (!s_last_action_lock) return;
+  xSemaphoreTake(s_last_action_lock, portMAX_DELAY);
+  va_list ap; va_start(ap, fmt);
+  vsnprintf(s_last_action_msg, sizeof(s_last_action_msg), fmt, ap);
+  va_end(ap);
+  xSemaphoreGive(s_last_action_lock);
+}
+
+static inline void get_last_action_msg(char *out, size_t out_sz) {
+  if (!out || out_sz == 0) return;
+  if (!s_last_action_lock) { snprintf(out, out_sz, "%s", s_last_action_msg); return; }
+  xSemaphoreTake(s_last_action_lock, portMAX_DELAY);
+  snprintf(out, out_sz, "%s", s_last_action_msg);
+  xSemaphoreGive(s_last_action_lock);
+}
+
 static void action_worker_task(void *arg) {
   actions_t act;
   for (;;) {
@@ -151,6 +178,9 @@ static void action_worker_task(void *arg) {
       char snap[256];
       build_queue_snapshot(snap, sizeof(snap));
       _LOG_D(TAG, "queue next-up -> last: %s", snap);
+      set_last_action_msg("dequeue %s | %s",
+                          (act > 0 && act < ACTION_MAX && ACTIONS[act].name) ? ACTIONS[act].name : "?",
+                          snap);
 
       _LOG_I(TAG, "Action dequeued=%d (%s)",
              (int)act, (act > 0 && act < ACTION_MAX && ACTIONS[act].name) ? ACTIONS[act].name : "?");
@@ -213,15 +243,25 @@ static actions_t parse_action_from_body(httpd_req_t *req) {
 
 /* ===================== HTTP handlers ===================== */
 
-/* Root page: buttons auto-generated from ACTIONS[] (POST-only UI) */
+/* Root page: buttons + 95% width status window with auto-refresh */
 static esp_err_t root_get_handler(httpd_req_t *req) {
   set_common_headers(req);
   httpd_resp_set_type(req, "text/html; charset=utf-8");
 
-  httpd_resp_sendstr_chunk(req, "<!doctype html><meta name=viewport content='width=device-width, initial-scale=1'>"
-                                "<title>Dishwasher</title>"
-                                "<style>button{margin:4px;padding:10px 16px;font-size:16px}</style>"
-                                "<h1>Dishwasher Controls</h1><div>");
+  httpd_resp_sendstr_chunk(req,
+    "<!doctype html>"
+    "<meta name=viewport content='width=device-width, initial-scale=1'>"
+    "<title>Dishwasher</title>"
+    "<style>"
+      "button{margin:4px;padding:10px 16px;font-size:16px}"
+      "#out{white-space:pre-wrap;margin:8px 0}"
+      "#statusBox{width:95%;margin:12px auto;padding:10px;border:1px solid #ccc;"
+                 "border-radius:6px;min-height:140px;overflow:auto;background:#fafafa}"
+      "body{font-family:system-ui,-apple-system,Segoe UI,Roboto,Helvetica,Arial,sans-serif}"
+    "</style>"
+    "<h1>Dishwasher Controls</h1><div>"
+  );
+
   for (int i = 1; i < ACTION_MAX; i++) {
     if (ACTIONS[i].show_button && ACTIONS[i].name) {
       httpd_resp_sendstr_chunk(req, "<button onclick='doPost(\"");
@@ -231,18 +271,46 @@ static esp_err_t root_get_handler(httpd_req_t *req) {
       httpd_resp_sendstr_chunk(req, "</button>");
     }
   }
+
   httpd_resp_sendstr_chunk(req,
-    "</div><pre id=out></pre>"
+    "</div>"
+    "<pre id='out'></pre>"
+    "<h2>Status</h2>"
+    "<div id='statusBox'><!-- /status loads here --></div>"
+
     "<script>"
+    "let statusTimer=null;"
+    "async function loadStatus(){"
+      "try{"
+        "const r=await fetch('/status',{cache:'no-store',credentials:'same-origin'});"
+        "const t=await r.text();"
+        "document.getElementById('statusBox').innerHTML=t;"
+      "}catch(e){"
+        "document.getElementById('statusBox').textContent='Error loading /status: '+e;"
+      "}"
+    "}"
+    "function startStatusAutoRefresh(periodMs){"
+      "if(statusTimer) clearInterval(statusTimer);"
+      "statusTimer=setInterval(loadStatus, periodMs);"
+    "}"
     "async function doPost(action){"
       "const r=await fetch('/action',{method:'POST',headers:{'Content-Type':'application/x-www-form-urlencoded'},"
       "body:'action='+encodeURIComponent(action),cache:'no-store',credentials:'same-origin'});"
-      "const t=await r.text();document.getElementById('out').textContent=(r.ok?'OK ':'ERR ')+t;"
+      "const t=await r.text();"
+      "document.getElementById('out').textContent=(r.ok?'OK ':'ERR ')+t;"
+      "setTimeout(loadStatus,1000);"   /* refresh /status 1s after click */
     "}"
-    "</script>");
+    "window.addEventListener('load',()=>{"
+      "loadStatus();"                  /* initial */
+      "startStatusAutoRefresh(10000);" /* every 10s */
+    "});"
+    "</script>"
+  );
+
   httpd_resp_sendstr_chunk(req, NULL);
   return ESP_OK;
 }
+
 /* POST /action: primary API (GET support removed) */
 static esp_err_t action_post_handler(httpd_req_t *req) {
   set_common_headers(req);
@@ -250,21 +318,25 @@ static esp_err_t action_post_handler(httpd_req_t *req) {
 
   actions_t act = parse_action_from_body(req);
   if (act == ACTION_NONE) {
+    set_last_action_msg("invalid action");
     httpd_resp_set_status(req, "400 Bad Request");
     httpd_resp_sendstr(req, "missing or invalid action");
     return ESP_OK;
   }
 
   if (!action_queue || xQueueSend(action_queue, &act, 0) != pdPASS) {
+    UBaseType_t depth = action_queue ? uxQueueMessagesWaiting(action_queue) : 0;
+    set_last_action_msg("queue busy (depth=%u)", (unsigned)depth);
     httpd_resp_set_status(req, "503 Service Unavailable");
     httpd_resp_sendstr(req, "busy");
     return ESP_OK;
   }
 
   UBaseType_t pending = uxQueueMessagesWaiting(action_queue);
-  char msg[80];
+  char msg[96];
   snprintf(msg, sizeof(msg), "queued %s; queue depth=%u\n",
            ACTIONS[act].name ? ACTIONS[act].name : "?", (unsigned)pending);
+  set_last_action_msg("%s", msg);  /* keep for /status */
   httpd_resp_sendstr(req, msg);
   return ESP_OK;
 }
@@ -278,12 +350,22 @@ static esp_err_t action_options_handler(httpd_req_t *req) {
   return ESP_OK;
 }
 
-/* Minimal status page */
+/* /status: simple HTML block consumed by the root page */
 static esp_err_t status_get_handler(httpd_req_t *req) {
   set_common_headers(req);
   httpd_resp_set_type(req, "text/html; charset=utf-8");
-  httpd_resp_sendstr_chunk(req, "<h1>Status</h1><pre>Program: ");
+
+  char last[256]; get_last_action_msg(last, sizeof(last));
+  unsigned depth = action_queue ? (unsigned)uxQueueMessagesWaiting(action_queue) : 0;
+
+  httpd_resp_sendstr_chunk(req, "<pre>");
+  httpd_resp_sendstr_chunk(req, "Program: ");
   httpd_resp_sendstr_chunk(req, ActiveStatus.Program);
+  httpd_resp_sendstr_chunk(req, "\nLast action: ");
+  httpd_resp_sendstr_chunk(req, last);
+  httpd_resp_sendstr_chunk(req, "\nQueue depth: ");
+  char tmp[16]; snprintf(tmp, sizeof(tmp), "%u", depth);
+  httpd_resp_sendstr_chunk(req, tmp);
   httpd_resp_sendstr_chunk(req, "\n</pre>");
   httpd_resp_sendstr_chunk(req, NULL);
   return ESP_OK;
