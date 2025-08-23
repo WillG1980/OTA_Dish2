@@ -18,7 +18,7 @@ rem --- Version + commit info ---
 for /f %%i in ('git rev-list --count HEAD') do set VERSION=%%i
 for /f %%i in ('git rev-parse --short HEAD') do set SHORTSHA=%%i
 echo Building commit !SHORTSHA! as build !VERSION! ...
-
+echo %i > pushcommit
 rem --- Build ---
 rem idf.py build
 set BUILD_RC=%ERRORLEVEL%
