@@ -32,7 +32,7 @@
 #define SW_SCAN_WINDOW_MS      150     // active scanning window within the cycle
 
 // ====== Wire map ======
-#define MAX_WIRE 
+#define MAX_WIRE 14
 
 
 #include <stdint.h>
