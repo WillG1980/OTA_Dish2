@@ -7,6 +7,7 @@
 #include <string.h>
 #include <math.h>
 #include <stdint.h>
+#include "dishwasher_programs.h"
 
 // ---- Your logging macro style ----
 #ifndef TAG
