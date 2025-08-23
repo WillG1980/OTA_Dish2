@@ -8,7 +8,7 @@
 #include <math.h>
 #include <stdint.h>
 #include "dishwasher_programs.h"
-
+ 
 // ---- Configuration ----
 #define TEMP_ADC_UNIT        ADC_UNIT_1
 #define TEMP_ADC_CH          ADC_CHANNEL_6     // GPIO34 = ADC1_CH6

@@ -224,23 +224,39 @@ void app_main(void) {
   Matrix_BindWire(10, GPIO_NUM_17); // status_washing/status_drying anode row
   Matrix_BindWire(12, GPIO_NUM_23);
 
-  _init_LED();
   _start_temp_monitor();
 
   LED_Toggle("status_washing", LED_ON);
   vTaskDelay(pdMS_TO_TICKS(2000));
+  LED_Toggle("status_washing", LED_OFF);
+  
   LED_Toggle("status_sensing", LED_ON);
   vTaskDelay(pdMS_TO_TICKS(2000));
+  LED_Toggle("status_sensing", LED_OFF);
+  
   LED_Toggle("status_drying", LED_ON);
   vTaskDelay(pdMS_TO_TICKS(2000));
+  LED_Toggle("status_drying", LED_OFF);
+  
   LED_Toggle("status_clean", LED_ON);
   vTaskDelay(pdMS_TO_TICKS(2000));
+  LED_Toggle("status_clean", LED_OFF);
+  
   LED_Toggle("delay_1", LED_ON);
   vTaskDelay(pdMS_TO_TICKS(2000));
+  LED_Toggle("delay_1", LED_OFF);
+  
   LED_Toggle("delay_3", LED_ON);
   vTaskDelay(pdMS_TO_TICKS(2000));
+  LED_Toggle("delay_3", LED_OFF);
+  
   LED_Toggle("switch_4", LED_ON);
+vTaskDelay(pdMS_TO_TICKS(2000));
+  LED_Toggle("switch_4", LED_OFF);
+  
 
+  _init_LED();
+  
   _LOG_I("Booting: %s", boot_partition_cstr());
   _LOG_I("Running: %s", running_partition_cstr());
   esp_log_level_set("*", ESP_LOG_DEBUG);
