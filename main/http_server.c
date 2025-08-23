@@ -256,7 +256,7 @@ static esp_err_t root_get_handler(httpd_req_t *req) {
                  "border-radius:6px;min-height:140px;overflow:auto;background:#fafafa}"
       "body{font-family:system-ui,-apple-system,Segoe UI,Roboto,Helvetica,Arial,sans-serif}"
     "</style>"
-    "<h1>Dishwasher Controls</h1><div>"
+    "<h1>Dishwasher Controls (" VERSION ")</h1><div>"
   );
 
   for (int i = 1; i < ACTION_MAX; i++) {

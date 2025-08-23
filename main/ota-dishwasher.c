@@ -226,7 +226,7 @@ void app_main(void) {
   Matrix_BindWire(12, GPIO_NUM_23);  
 
  
-  _init_LED();
+  //_init_LED();
   _start_temp_monitor();
 
   LED_Toggle("status_washing", LED_ON);
