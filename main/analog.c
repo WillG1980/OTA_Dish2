@@ -267,7 +267,7 @@ analog_set_last_statusf(
   (unsigned long)g.cfg.window_sec,
   (float)wavg_v, (float)wavg_r, (unsigned long)n
 );
-
+ActiveStatus.CurrentTemp = (int)wavg_r; // TEMPORARY HACK: report resistance as "temperature"
     
     }
 
