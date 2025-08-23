@@ -1,4 +1,4 @@
-// http_server.c — POST-only, ACTION_MAX + queue snapshot logging + status pane
+// http_server.c — POST-only, action queue + queue snapshot logging + status pane
 #include "esp_http_server.h"
 #include "esp_log.h"
 #include "freertos/FreeRTOS.h"
@@ -9,16 +9,13 @@
 #include <stdio.h>
 #include <stdarg.h>
 #include <string.h>
-#include <strings.h>  // strcasecmp
+#include <strings.h>             // strcasecmp
+#include <stdbool.h>
 
 // Project headers (adjust paths if needed)
 #include "http_server.h"
 #include "local_ota.h"            // check_and_perform_ota()
 #include "dishwasher_programs.h"  // run_program(), ActiveStatus, setCharArray(...)
-
-// Use your project's logging macros
-// Expecting _LOG_X(TAG, ...) to be defined by your project (INFO/DEBUG/etc).
-
 
 /* ===================== Actions ===================== */
 
@@ -52,16 +49,16 @@ static void program_task_trampoline(void *arg) {
 
 static void start_program_if_idle(const char *program_name) {
   if (program_task_handle != NULL) {
-    _LOG_D(TAG, "Program already running; ignoring request");
+    _LOG_D("Program already running; ignoring request");
     return;
   }
   setCharArray(ActiveStatus.Program, program_name);
   BaseType_t ok = xTaskCreate(program_task_trampoline, "run_program", 8192, NULL, 5, &program_task_handle);
   if (ok != pdPASS) {
     program_task_handle = NULL;
-    _LOG_E(TAG, "Failed to create run_program task");
+    _LOG_E("Failed to create run_program task");
   } else {
-    _LOG_I(TAG, "Started program '%s'", program_name);
+    _LOG_I("Started program '%s'", program_name);
   }
 }
 
@@ -69,9 +66,9 @@ static void start_program_if_idle(const char *program_name) {
 static void act_start(void)  { start_program_if_idle("Normal"); }
 static void act_test(void)   { start_program_if_idle("Tester"); }
 static void act_hitemp(void) { start_program_if_idle("HiTemp"); }
-static void act_cancel(void) { _LOG_I(TAG, "Cancel requested"); /* hook your cancel here */ }
-static void act_update(void) { _LOG_I(TAG, "Update requested"); check_and_perform_ota(); }
-static void act_reboot(void) { _LOG_I(TAG, "Reboot requested"); esp_restart(); }
+static void act_cancel(void) { _LOG_I("Cancel requested"); /* hook your cancel here */ }
+static void act_update(void) { _LOG_I("Update requested"); check_and_perform_ota(); }
+static void act_reboot(void) { _LOG_I("Reboot requested"); esp_restart(); }
 
 /* -------- Action table -------- */
 static const action_desc_t ACTIONS[ACTION_MAX] = {
@@ -177,18 +174,18 @@ static void action_worker_task(void *arg) {
       /* Log queue snapshot at the moment we are about to handle 'act' */
       char snap[256];
       build_queue_snapshot(snap, sizeof(snap));
-      _LOG_D(TAG, "queue next-up -> last: %s", snap);
+      _LOG_D("queue next-up -> last: %s", snap);
       set_last_action_msg("dequeue %s | %s",
                           (act > 0 && act < ACTION_MAX && ACTIONS[act].name) ? ACTIONS[act].name : "?",
                           snap);
 
-      _LOG_I(TAG, "Action dequeued=%d (%s)",
+      _LOG_I("Action dequeued=%d (%s)",
              (int)act, (act > 0 && act < ACTION_MAX && ACTIONS[act].name) ? ACTIONS[act].name : "?");
 
       if (act > 0 && act < ACTION_MAX && ACTIONS[act].fn) {
         ACTIONS[act].fn();
       } else {
-        _LOG_W(TAG, "No handler for action=%d", (int)act);
+        _LOG_W("No handler for action=%d", (int)act);
       }
     }
   }
@@ -376,31 +373,38 @@ static esp_err_t status_get_handler(httpd_req_t *req) {
 static httpd_handle_t s_server = NULL;
 static bool           s_initialized = false;
 
-httpd_handle_t start_webserver(void) {
-  // One-time init (idempotent across multiple calls)
-  if (!s_initialized) {
-    s_initialized = true;
-    action_queue = xQueueCreate(ACTION_Q_LEN, sizeof(actions_t));
-    if (!action_queue) {
-      _LOG_E(TAG, "Failed to create action queue");
-    } else {
-      BaseType_t ok = xTaskCreate(action_worker_task, "action_worker", 4096, NULL, 5, &action_task_handle);
-      if (ok != pdPASS) {
-        _LOG_E(TAG, "Failed to create action worker task");
-        action_task_handle = NULL;
-      }
-    }
+/* Callable initializer for ota-dishwasher.c and friends */
+void http_server_actions_init(void) {
+  if (s_initialized) return;
+  s_initialized = true;
+
+  action_queue = xQueueCreate(ACTION_Q_LEN, sizeof(actions_t));
+  if (!action_queue) {
+    _LOG_E("Failed to create action queue");
+    return;
   }
+  BaseType_t ok = xTaskCreate(action_worker_task, "action_worker", 4096, NULL, 5, &action_task_handle);
+  if (ok != pdPASS) {
+    _LOG_E("Failed to create action worker task");
+    action_task_handle = NULL;
+  } else {
+    _LOG_I("Action worker started");
+  }
+}
+
+httpd_handle_t start_webserver(void) {
+  /* Ensure actions infra exists */
+  http_server_actions_init();
 
   if (s_server) {
-    _LOG_I(TAG, "Webserver already running");
+    _LOG_I("Webserver already running");
     return s_server;
   }
 
   httpd_config_t config = HTTPD_DEFAULT_CONFIG();
   esp_err_t ret = httpd_start(&s_server, &config);
   if (ret != ESP_OK) {
-    _LOG_E(TAG, "httpd_start failed: %s", esp_err_to_name(ret));
+    _LOG_E("httpd_start failed: %s", esp_err_to_name(ret));
     s_server = NULL;
     return NULL;
   }
@@ -423,7 +427,7 @@ httpd_handle_t start_webserver(void) {
   httpd_register_uri_handler(s_server, &uri_action_options);
   httpd_register_uri_handler(s_server, &uri_status);
 
-  _LOG_I(TAG, "Webserver started");
+  _LOG_I("Webserver started");
   return s_server;
 }
 
@@ -431,6 +435,6 @@ void stop_webserver(void) {
   if (s_server) {
     httpd_stop(s_server);
     s_server = NULL;
-    _LOG_I(TAG, "Webserver stopped");
+    _LOG_I("Webserver stopped");
   }
 }
