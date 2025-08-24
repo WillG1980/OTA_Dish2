@@ -50,7 +50,8 @@ void prepare_programs(void) {
   bool found = false;
   long long min_time = 0;
   long long max_time = 0;
-
+  long long step_min_time = 0;
+  long long step_max_time = 0;
 int cycle=1;
 char last_cycle[10]="";
 
@@ -65,18 +66,22 @@ char last_cycle[10]="";
         strcpy(last_cycle, current.lines[l].name_cycle);
       }
       ProgramLineStruct *Line = &current.lines[l];
-      min_time += (long long)Line->min_time;
+      step_min_time = (long long)Line->min_time;
       // if max_time = 0 treat as min_time (as your design did)
-      max_time +=
+      step_max_time =
           (long long)((Line->max_time > 0) ? Line->max_time : Line->min_time);
+      min_time+=step_min_time;
+      max_time+=step_max_time;
 
        _LOG_I("%6s->%6s->%6s\t = Min TTR:%4" PRIu32 "\tMax TTR:%4" PRIu32
              " \tMin Temp:%3d \tMax Temp:%3d \tGPIO:%" PRIu64,
              SAFE_STR(Programs[i].name),
              SAFE_STR(Line->name_cycle),
              SAFE_STR(Line->name_step), 
-             (uint32_t)Line->min_time,
-             (long long)((Line->max_time > 0) ? Line->max_time : Line->min_time), 
+
+             (long long)step_min_time,
+             (long long)step_max_time , 
+
              (int)Line->min_temp,
              (int)Line->max_temp, 
              (uint64_t)Line->gpio_mask);
@@ -86,12 +91,10 @@ char last_cycle[10]="";
 
     Programs[i].min_time = min_time;
     Programs[i].max_time = max_time;
-
+    Programs[i].num_cycles=cycle;
     printf("\nTotal run time for program '%s': Min: %lld Minutes, Max: %lld "
            "Minutes\n",
            current.name, (long long)min_time / MIN, (long long)max_time / MIN);
-
-Programs[i].num_cycles=cycle;
   }
 }
 
@@ -192,13 +195,13 @@ void reset_active_status(void) {
   ActiveStatus.ActiveLEDs[0] = '\0';
   // Assuming Active_Program is a struct, we need to reset its fields
   // individually
+
   ActiveStatus.Active_Program.name = NULL;
   ActiveStatus.Active_Program.lines = NULL;
   ActiveStatus.Active_Program.num_lines = 0;
   ActiveStatus.Active_Program.min_time = 0;
   ActiveStatus.Active_Program.max_time = 0;
 
-  
   bool HEAT_REQUESTED = false;
-  bool SoapHasDispensed = false;
+//  bool SoapHasDispensed = false;
 }
