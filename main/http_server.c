@@ -211,7 +211,11 @@ static esp_err_t handle_status(httpd_req_t *req) {
   // JSON
   char json[1024];
   size_t pos = 0;
-  #define APPEND(fmt, ...) do {  int n = snprintf(json + pos, (pos < sizeof(json)) ? sizeof(json) - pos : 0, fmt, __VA_ARGS__);  if (n < 0) n = 0; pos += (size_t)n;   } while(0)
+  //#define APPEND(fmt, ...) do {  int n = snprintf(json + pos, (pos < sizeof(json)) ? sizeof(json) - pos : 0, fmt, __VA_ARGS__);  if (n < 0) n = 0; pos += (size_t)n;   } while(0)
+  #define APPEND(...) do { \
+  int n = snprintf(json + pos, (pos < sizeof(json)) ? sizeof(json) - pos : 0, __VA_ARGS__); \
+  if (n < 0) n = 0; pos += (size_t)n; \
+} while(0)
 
   httpd_resp_set_type(req, "application/json");
   APPEND("{");
