@@ -140,13 +140,10 @@ static inline void IRAM_ATTR gpio_mask_toggle(uint64_t mask) {
 static const uint64_t ALL_ACTORS = HEAT | SPRAY | INLET | DRAIN | SOAP;
 #define NUM_PROGRAMS 3
 
-#define SEC (1000) // 1 second in milliseconds
-#define MIN (60)   // 60 seconds in milliseconds
+#define SEC (1) // 1 second is one second
+#define MIN (60)   // 60 seconds in one minute
 #define SAFE_STR(p) ((p) ? (p) : "")
 #define NUM_DEVICES 8
-
-// static const char *FIRMWARE_URL = "https://house.sjcnu.com/esp32/firmware/"
-// OTA_VERSION "/" PROJECT_NAME ".bin";
 
 typedef struct {
   char *name_cycle;
@@ -164,6 +161,7 @@ typedef struct {
   size_t num_lines;
   int64_t min_time;
   int64_t max_time;
+  int num_cycles;  
 } Program_Entry;
 
 // Normal program
@@ -256,15 +254,19 @@ static const ProgramLineStruct HiTempProgramLines[] = {
 
     {"cool", "vent", 29 * MIN, 0, 140, 140, HEAT},
     {"fini", "clean", 0, 0, 0, 0, 0}};
-
+// Cancel program. drain tank, shut down.
+static const ProgramLineStruct CancelProgramLines[] = {
+    {"Cancel", "drain", 2 * MIN, 0, 0, 0, DRAIN},
+    {"fini", "clean", 0, 0, 0, 0, 0}};
 static Program_Entry Programs[NUM_PROGRAMS] = {
     {"Tester", TesterProgramLines,
-     sizeof(TesterProgramLines) / sizeof(TesterProgramLines[0])},
+     sizeof(TesterProgramLines) / sizeof(TesterProgramLines[0]),0},
     {"Normal", NormalProgramLines,
-     sizeof(NormalProgramLines) / sizeof(NormalProgramLines[0])},
+     sizeof(NormalProgramLines) / sizeof(NormalProgramLines[0]),0},
     {"HiTemp", HiTempProgramLines,
-     sizeof(HiTempProgramLines) / sizeof(HiTempProgramLines[0])}};
-
+     sizeof(HiTempProgramLines) / sizeof(HiTempProgramLines[0]),0};
+      {"Cancel", CancelProgramLines,
+     sizeof(CancelProgramLines) / sizeof(CancelProgramLines[0]),0};
 #define setCharArray(target, value)                                            \
   do {                                                                         \
     strncpy((target), (value), sizeof(target) - 1);                            \
