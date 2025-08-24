@@ -437,12 +437,12 @@ static esp_err_t generic_action_handler(httpd_req_t *req) {
         ROUTES[i].group[glen] == '\0' && strcmp(ROUTES[i].name, name) == 0) {
       actions_t a = ROUTES[i].act;
       if (!s_action_queue) {
-        httpd_resp_send_err(req, HTTPD_503_SERVICE_UNAVAILABLE, "queue not ready");
+        httpd_resp_send_err(req, 503, "queue not ready");
         return ESP_OK;
       }
       if (xQueueSend(s_action_queue, &a, 0) != pdTRUE) {
         _LOG_W("action queue full; dropping %d", (int)a);
-        httpd_resp_send_err(req, HTTPD_503_SERVICE_UNAVAILABLE, "queue full");
+        httpd_resp_send_err(req, 503, "queue full");
         return ESP_OK;
       }
       unsigned depth = queue_depth();
