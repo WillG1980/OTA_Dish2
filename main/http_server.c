@@ -193,11 +193,15 @@ static esp_err_t handle_status(httpd_req_t *req) {
   httpd_resp_sendstr_chunk(req, "{");
   bool first = true;
 
-snprintf(runbuf,sizeof(runbuf),"%s->%s->%s Cycle %ld of %ld, step %ld of %ld",ActiveStatus.Program,ActiveStatus.Cycle,ActiveStatus.Step,ActiveStatus.CycleIndex,ActiveStatus.CyclesTotal,ActiveStatus.StepIndex,ActiveStatus.StepsTotal);
+  snprintf(runbuf, sizeof(runbuf),
+           "%s->%s->%s Cycle %ld of %ld, step %ld of %ld", ActiveStatus.Program,
+           ActiveStatus.Cycle, ActiveStatus.Step, ActiveStatus.CycleIndex,
+           ActiveStatus.CyclesTotal, ActiveStatus.StepIndex,
+           ActiveStatus.StepsTotal);
   json_prop_str(req, &first, "Program", runbuf);
   json_prop_int(req, &first, "CurrentTemp", ActiveStatus.CurrentTemp);
   char mm1[8], mm2[8], mm3[8], tstart[16], tend[16];
-  
+
   json_prop_str(req, &first, "since_start_mmss", ms_to_mmss(elapsed_ms, mm1));
   json_prop_str(req, &first, "remaining_mmss", ms_to_mmss(remaining_ms, mm2));
   json_prop_str(req, &first, "eta_finish_mmss", ms_to_mmss(remaining_ms, mm3));
@@ -205,7 +209,6 @@ snprintf(runbuf,sizeof(runbuf),"%s->%s->%s Cycle %ld of %ld, step %ld of %ld",Ac
   format_est_time_ms(start_ms, tstart);
   format_est_time_ms((start_ms > 0 && total_ms > 0) ? (start_ms + total_ms) : 0,
                      tend);
-
 
   json_prop_str(req, &first, "start_time_est", tstart);
   json_prop_str(req, &first, "end_time_est", tend);
@@ -317,18 +320,32 @@ __attribute__((weak)) void perform_action_SPRAY(void) {
 }
 __attribute__((weak)) void perform_action_HEAT(void) { _LOG_I("Action HEAT"); }
 __attribute__((weak)) void perform_action_SOAP(void) { _LOG_I("Action SOAP"); }
-__attribute__((weak)) void perform_action_LEDS(void) { 
+__attribute__((weak)) void perform_action_LEDS(void) {
 
-    int DELAY = pdMS_TO_TICKS(5000);
+  int DELAY = pdMS_TO_TICKS(5000);
 
-  LED_Toggle("status_washing", LED_ON);  vTaskDelay(DELAY);  LED_Toggle("status_washing", LED_OFF);  
-  LED_Toggle("status_sensing", LED_ON);  vTaskDelay(DELAY);  LED_Toggle("status_sensing", LED_OFF);  
-  LED_Toggle("status_drying", LED_ON);  vTaskDelay(DELAY);  LED_Toggle("status_drying", LED_OFF);  
-  LED_Toggle("status_clean", LED_ON);  vTaskDelay(DELAY);  LED_Toggle("status_clean", LED_OFF);  
-  LED_Toggle("delay_1", LED_ON);  vTaskDelay(DELAY);  LED_Toggle("delay_1", LED_OFF);
-  LED_Toggle("delay_3", LED_ON);  vTaskDelay(DELAY);  LED_Toggle("delay_3", LED_OFF);
-  LED_Toggle("switch_4", LED_ON);  vTaskDelay(DELAY);  LED_Toggle("switch_4", LED_OFF);  
- }
+  LED_Toggle("status_washing", LED_ON);
+  vTaskDelay(DELAY);
+  LED_Toggle("status_washing", LED_OFF);
+  LED_Toggle("status_sensing", LED_ON);
+  vTaskDelay(DELAY);
+  LED_Toggle("status_sensing", LED_OFF);
+  LED_Toggle("status_drying", LED_ON);
+  vTaskDelay(DELAY);
+  LED_Toggle("status_drying", LED_OFF);
+  LED_Toggle("status_clean", LED_ON);
+  vTaskDelay(DELAY);
+  LED_Toggle("status_clean", LED_OFF);
+  LED_Toggle("delay_1", LED_ON);
+  vTaskDelay(DELAY);
+  LED_Toggle("delay_1", LED_OFF);
+  LED_Toggle("delay_3", LED_ON);
+  vTaskDelay(DELAY);
+  LED_Toggle("delay_3", LED_OFF);
+  LED_Toggle("switch_4", LED_ON);
+  vTaskDelay(DELAY);
+  LED_Toggle("switch_4", LED_OFF);
+}
 __attribute__((weak)) void perform_action_CANCEL(void) {
   _LOG_I("Action CANCEL — stop current and start Cancel program");
   (void)cancel_and_start_program("Cancel");
@@ -462,127 +479,149 @@ static esp_err_t generic_action_handler(httpd_req_t *req) {
         return ESP_OK;
       }
       unsigned depth = queue_depth();
-      _LOG_I("action enqueued: %d (queue depth %u)", (int)a, depth); httpd_resp_sendstr(req, "OK\n"); return ESP_OK; } }
-    httpd_resp_send_err(req, HTTPD_404_NOT_FOUND, "unknown action");
-    return ESP_OK;
+      _LOG_I("action enqueued: %d (queue depth %u)", (int)a, depth);
+      httpd_resp_sendstr(req, "OK\n");
+      return ESP_OK;
     }
+  }
+  httpd_resp_send_err(req, HTTPD_404_NOT_FOUND, "unknown action");
+  return ESP_OK;
+}
 
-    // Root UI with grouped buttons and 95% width status viewport
+// Root UI with grouped buttons and 95% width status viewport
 static esp_err_t root_get_handler(httpd_req_t *req) {
-    httpd_resp_set_type(req, "text/html");
+  httpd_resp_set_type(req, "text/html");
 
-    const char *ip = ActiveStatus.IPAddress;
-    char titlebuf[160];
-    snprintf(titlebuf, sizeof(titlebuf), "Dishwasher Controller: %s %s", VERSION, ip);
+  const char *ip = ActiveStatus.IPAddress;
+  char titlebuf[160];
+  snprintf(titlebuf, sizeof(titlebuf), "Dishwasher Controller: %s %s", VERSION,
+           ip);
 
-    httpd_resp_sendstr_chunk(req,
-        "<!doctype html><html><head>"
-        "<meta charset=\"utf-8\">"
-        "<meta name=\"viewport\" content=\"width=device-width, initial-scale=1\">"
-        "<title>");
-    httpd_resp_sendstr_chunk(req, titlebuf);
-    httpd_resp_sendstr_chunk(req, "</title>"
-        "<style>"
-        "body{font-family:sans-serif;margin:1rem}"
-        ".row{margin:0.75rem 0}"
-        ".btn{padding:0.6rem 1rem;margin:0.25rem;border:1px solid #ccc;border-radius:10px;cursor:pointer}"
-        ".btn.pushed{background:#ddd}"
-        "#status{width:95%;height:16rem;border:1px solid #ccc;padding:0.5rem;white-space:pre;overflow:auto}"
-        ".group{font-weight:600;margin-right:0.5rem}"
-        "</style></head><body>");
-    httpd_resp_sendstr_chunk(req, "<h2>");
-    httpd_resp_sendstr_chunk(req, titlebuf);
-    httpd_resp_sendstr_chunk(req, "</h2>");
-      const char *current_group = NULL;
-      for (size_t i = 0; i < sizeof(ROUTES) / sizeof(ROUTES[0]); ++i) {
-        const route_t *r = &ROUTES[i];
-        if (!current_group || strcmp(current_group, r->group) != 0) {
-          if (current_group) {
-            httpd_resp_sendstr_chunk(req, "</div>");
-          }
-          httpd_resp_sendstr_chunk(req,
-                                   "<div class=\"row\"><span class=\"group\">");
-          httpd_resp_sendstr_chunk(req, r->group);
-          httpd_resp_sendstr_chunk(req, ":</span>");
-          current_group = r->group;
-        }
-        httpd_resp_sendstr_chunk(req,
-                                 "<button class=\"btn\" data-uri=\"/action/");
-        httpd_resp_sendstr_chunk(req, r->group);
-        httpd_resp_sendstr_chunk(req, "/");
-        httpd_resp_sendstr_chunk(req, r->name);
-        httpd_resp_sendstr_chunk(req, "\">");
-        httpd_resp_sendstr_chunk(req, r->name);
-        httpd_resp_sendstr_chunk(req, "</button>");
-      }
+  httpd_resp_sendstr_chunk(
+      req,
+      "<!doctype html><html><head>"
+      "<meta charset=\"utf-8\">"
+      "<meta name=\"viewport\" content=\"width=device-width, initial-scale=1\">"
+      "<title>");
+  httpd_resp_sendstr_chunk(req, titlebuf);
+  httpd_resp_sendstr_chunk(
+      req, "</title>"
+           "<style>"
+           "body{font-family:sans-serif;margin:1rem}"
+           ".row{margin:0.75rem 0}"
+           ".btn{padding:0.6rem 1rem;margin:0.25rem;border:1px solid "
+           "#ccc;border-radius:10px;cursor:pointer}"
+           ".btn.pushed{background:#ddd}"
+
+           "#status{width:95%;height:16rem;border:1px solid "
+           "#ccc;padding:0.5rem;overflow:auto}"
+           "#statTable{width:100%;border-collapse:collapse}"
+           "#statTable th,#statTable td{border:1px solid #ccc;padding:4px "
+           "8px;text-align:left;vertical-align:top}"
+           "#statTable th{background:#f5f5f5;width:36ch}"
+           "</style></head><body>");
+  httpd_resp_sendstr_chunk(req, "<h2>");
+  httpd_resp_sendstr_chunk(req, titlebuf);
+  httpd_resp_sendstr_chunk(req, "</h2>");
+  const char *current_group = NULL;
+  for (size_t i = 0; i < sizeof(ROUTES) / sizeof(ROUTES[0]); ++i) {
+    const route_t *r = &ROUTES[i];
+    if (!current_group || strcmp(current_group, r->group) != 0) {
       if (current_group) {
         httpd_resp_sendstr_chunk(req, "</div>");
       }
-      httpd_resp_sendstr_chunk(
+      httpd_resp_sendstr_chunk(req,
+                               "<div class=\"row\"><span class=\"group\">");
+      httpd_resp_sendstr_chunk(req, r->group);
+      httpd_resp_sendstr_chunk(req, ":</span>");
+      current_group = r->group;
+    }
+    httpd_resp_sendstr_chunk(req, "<button class=\"btn\" data-uri=\"/action/");
+    httpd_resp_sendstr_chunk(req, r->group);
+    httpd_resp_sendstr_chunk(req, "/");
+    httpd_resp_sendstr_chunk(req, r->name);
+    httpd_resp_sendstr_chunk(req, "\">");
+    httpd_resp_sendstr_chunk(req, r->name);
+    httpd_resp_sendstr_chunk(req, "</button>");
+  }
+  if (current_group) {
+    httpd_resp_sendstr_chunk(req, "</div>");
+  }
+httpd_resp_sendstr_chunk(
           req,
-          "<h3>Status</h3><pre id=\"status\"></pre><script>const "
-          "statusBox=document.getElementById('status');async function "
-          "refresh(){try{const r=await fetch('/status');const t=await "
-          "r.text();statusBox.textContent=t;}catch(e){statusBox.textContent='("
-          "error fetching /status)'}}function "
-          "pushMark(btn){btn.classList.add('pushed');setTimeout(()=>btn."
-          "classList.remove('pushed'),2000)}async function "
-          "fire(uri,btn){pushMark(btn);try{await "
-          "fetch(uri,{method:'POST'});}catch(e){} "
-          "setTimeout(refresh,1000);}document.querySelectorAll('.btn').forEach("
-          "b=>b.addEventListener('click',()=>fire(b.dataset.uri,b)));"
-          "setInterval(refresh,10000);refresh();</script></body></html>");
-      return httpd_resp_sendstr_chunk(req, NULL);
-    }
+          "<h3>Status</h3><div id=\"status\"><table id=\"statTable\"></table></div>"
+          "<script>"
+          "const statTable=document.getElementById('statTable');"
+          "function esc(s){return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;');}"
+          "function renderStatus(d){"
+            "const keys=Object.keys(d).sort();"
+            "let html='';"
+            "for(let i=0;i<keys.length;i++){"
+              "const k=keys[i];"
+              "let v=d[k];"
+              "if(v===null||v===undefined){v='';}"
+              "else if(typeof v==='object'){try{v=JSON.stringify(v);}catch(_){v=String(v);}}"
+              "html+='<tr><th>'+esc(k)+'</th><td>'+esc(v)+'</td></tr>';"
+            "}"
+            "statTable.innerHTML=html;"
+          "}"
+          "async function refresh(){try{const r=await fetch('/status');const j=await r.json();renderStatus(j);}catch(e){statTable.innerHTML='<tr><td>(error fetching /status)</td></tr>';}}"
+          "function pushMark(btn){btn.classList.add('pushed');setTimeout(()=>btn.classList.remove('pushed'),2000);}"
+          "async function fire(uri,btn){pushMark(btn);try{await fetch(uri,{method:'POST'});}catch(e){} setTimeout(refresh,1000);}"
+          "document.querySelectorAll('.btn').forEach(b=>b.addEventListener('click',()=>fire(b.dataset.uri,b)));"
+          "setInterval(refresh,10000);refresh();"
+          "</script></body></html>");
+  return httpd_resp_sendstr_chunk(req, NULL);
+}
 
-    void start_webserver(void) {
-      if (s_server) {
-        return;
-      }
-      if (!s_action_queue) {
-        s_action_queue = xQueueCreate(ACTION_QUEUE_LEN, sizeof(actions_t));
-        if (!s_action_queue) {
-          _LOG_E("failed to create action queue");
-          return;
-        }
-      }
-      if (!s_action_task) {
-        if (xTaskCreate(action_worker, "action_worker", ACTION_TASK_STACK, NULL,
-                        ACTION_TASK_PRIO, &s_action_task) != pdPASS) {
-          _LOG_E("failed to create action_worker");
-          return;
-        }
-      }
-      httpd_config_t config = HTTPD_DEFAULT_CONFIG();
-      config.uri_match_fn = httpd_uri_match_wildcard;
-      if (httpd_start(&s_server, &config) != ESP_OK) {
-        _LOG_E("httpd_start failed");
-        s_server = NULL;
-        return;
-      }
-      // GET only for root and /status
-      httpd_uri_t status_get = {.uri = "/status",
-                                .method = HTTP_GET,
-                                .handler = handle_status,
-                                .user_ctx = NULL};
-      httpd_register_uri_handler(s_server, &status_get);
-      httpd_uri_t action_post = {.uri = "/action/*",
-                                 .method = HTTP_POST,
-                                 .handler = generic_action_handler,
-                                 .user_ctx = NULL};
-      httpd_register_uri_handler(s_server, &action_post);
-      httpd_uri_t root_get = {.uri = "/",
-                              .method = HTTP_GET,
-                              .handler = root_get_handler,
-                              .user_ctx = NULL};
-      httpd_register_uri_handler(s_server, &root_get);
-      _LOG_I("webserver started");
+void start_webserver(void) {
+  if (s_server) {
+    return;
+  }
+  if (!s_action_queue) {
+    s_action_queue = xQueueCreate(ACTION_QUEUE_LEN, sizeof(actions_t));
+    if (!s_action_queue) {
+      _LOG_E("failed to create action queue");
+      return;
     }
+  }
+  if (!s_action_task) {
+    if (xTaskCreate(action_worker, "action_worker", ACTION_TASK_STACK, NULL,
+                    ACTION_TASK_PRIO, &s_action_task) != pdPASS) {
+      _LOG_E("failed to create action_worker");
+      return;
+    }
+  }
+  httpd_config_t config = HTTPD_DEFAULT_CONFIG();
+  config.uri_match_fn = httpd_uri_match_wildcard;
+  if (httpd_start(&s_server, &config) != ESP_OK) {
+    _LOG_E("httpd_start failed");
+    s_server = NULL;
+    return;
+  }
+  // GET only for root and /status
+  httpd_uri_t status_get = {.uri = "/status",
+                            .method = HTTP_GET,
+                            .handler = handle_status,
+                            .user_ctx = NULL};
+  httpd_register_uri_handler(s_server, &status_get);
+  httpd_uri_t action_post = {.uri = "/action/*",
+                             .method = HTTP_POST,
+                             .handler = generic_action_handler,
+                             .user_ctx = NULL};
+  httpd_register_uri_handler(s_server, &action_post);
+  httpd_uri_t root_get = {.uri = "/",
+                          .method = HTTP_GET,
+                          .handler = root_get_handler,
+                          .user_ctx = NULL};
+  httpd_register_uri_handler(s_server, &root_get);
+  _LOG_I("webserver started");
+}
 
-    void stop_webserver(void) {
-      if (s_server) {
-        httpd_stop(s_server);
-      }
-      s_server = NULL;
-    }
-    bool http_server_is_running(void) { return s_server != NULL; }
+void stop_webserver(void) {
+  if (s_server) {
+    httpd_stop(s_server);
+  }
+  s_server = NULL;
+}
+bool http_server_is_running(void) { return s_server != NULL; }

@@ -233,7 +233,7 @@ static void temp_sampler_task(void *arg) {
                 last_log_ms = now;
 
                 // Legacy line for scripts: Current ADC reading (EWMA)
-                _LOG_I("Current ADC reading: %d", (int)lroundf(st.ewma));
+                //_LOG_I("Current ADC reading: %d", (int)lroundf(st.ewma));
 
                 // Rich structured line for detailed analysis
                 _LOG_I(
