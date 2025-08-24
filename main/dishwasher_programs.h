@@ -340,6 +340,8 @@ typedef struct {
   int32_t CycleIndex;
   int32_t CyclesTotal;
   int64_t LastTransitionMs;
+  int64_t ProgramStartMs; 
+  int64_t ProgramPlannedTotalMs;
 
   Program_Entry Active_Program;
 
