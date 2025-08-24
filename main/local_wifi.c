@@ -255,19 +255,28 @@ esp_err_t local_wifi_init_and_connect(void)
         return ESP_FAIL;
     }
 
-    // No saved choice: REAL → WOKWI
+    // No saved choice: _USE_REAL_FIRST_ REAL → WOKWI
+#ifdef _USE_REAL_FIRST_
     if (_try_credential(WIFI_SSID_REAL, WIFI_PASS_REAL, WIFI_RETRIES_PER_CRED, WIFI_CONNECT_TIMEOUT_MS) == ESP_OK) {
         s_selected_cred = CRED_REAL;
         _save_selected_cred_to_nvs(s_selected_cred);
         return ESP_OK;
     }
-
+#endif
     _LOG_W( "REAL failed; falling back to WOKWI…");
     if (_try_credential(WIFI_SSID_WOKWI, WIFI_PASS_WOKWI, WIFI_RETRIES_PER_CRED, WIFI_CONNECT_TIMEOUT_MS) == ESP_OK) {
         s_selected_cred = CRED_WOKWI;
         _save_selected_cred_to_nvs(s_selected_cred);
         return ESP_OK;
     }
+
+#ifndef _USE_REAL_FIRST_
+    if (_try_credential(WIFI_SSID_REAL, WIFI_PASS_REAL, WIFI_RETRIES_PER_CRED, WIFI_CONNECT_TIMEOUT_MS) == ESP_OK) {
+        s_selected_cred = CRED_REAL;
+        _save_selected_cred_to_nvs(s_selected_cred);
+        return ESP_OK;
+    }
+#endif
 
     _LOG_E( "Both credentials failed.");
     return ESP_FAIL;
