@@ -269,7 +269,7 @@ vTaskDelay(pdMS_TO_TICKS(2000));
   ESP_ERROR_CHECK(nvs_flash_init());
   _init_setup();
 
-  server = start_webserver();
+  start_webserver();
   //  check_and_perform_ota();
   vTaskDelay(pdMS_TO_TICKS(10000));
 
