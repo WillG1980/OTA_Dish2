@@ -7,7 +7,7 @@ idf_component_register(
         "local_wifi.c"
         "http_utils.c"
         "logger.c"
-       
+       "http_server.c"
         "dishwasher_programs.c"
         "io.c"
         "analog.c"
