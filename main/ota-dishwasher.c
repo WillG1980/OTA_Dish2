@@ -207,7 +207,6 @@ void init_status(void) {
   _LOG_I("Ending Function");
 }
 // app_main
-httpd_handle_t server = NULL;
 void app_main(void) {
 
   gpio_mask_config_outputs(ALL_ACTORS);

@@ -32,7 +32,6 @@
 
 // ===== Externals you already have =====
 
-extern void run_program(void *);   // your program engine task
 
 // ===== Devices (names for /status list) =====
 typedef enum {
