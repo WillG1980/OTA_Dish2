@@ -463,19 +463,31 @@ static esp_err_t generic_action_handler(httpd_req_t *req) {
     }
 
     // Root UI with grouped buttons and 95% width status viewport
-    static esp_err_t root_get_handler(httpd_req_t * req) {
-      httpd_resp_set_type(req, "text/html");
-      httpd_resp_sendstr_chunk(
-          req,
-          "<!doctype html><html><head><meta charset=\"utf-8\"><meta "
-          "name=\"viewport\" content=\"width=device-width, "
-          "initial-scale=1\"><title>Dishwasher</"
-          "title><style>body{font-family:sans-serif;margin:1rem}.row{margin:0."
-          "75rem 0}.btn{padding:0.6rem 1rem;margin:0.25rem;border:1px solid "
-          "#ccc;border-radius:10px;cursor:pointer}.btn.pushed{background:#ddd}#"
-          "status{width:95%;height:16rem;border:1px solid "
-          "#ccc;padding:0.5rem;white-space:pre;overflow:auto}.group{font-"
-          "weight:600;margin-right:0.5rem}</style></head><body>");
+static esp_err_t root_get_handler(httpd_req_t *req) {
+    httpd_resp_set_type(req, "text/html");
+
+    const char *ip = (ActiveStatus.IPaddress && ActiveStatus.IPaddress[0]) ? ActiveStatus.IPaddress : "(no IP)";
+    char titlebuf[160];
+    snprintf(titlebuf, sizeof(titlebuf), "Dishwasher Controller: %s %s", VERSION, ip);
+
+    httpd_resp_sendstr_chunk(req,
+        "<!doctype html><html><head>"
+        "<meta charset=\"utf-8\">"
+        "<meta name=\"viewport\" content=\"width=device-width, initial-scale=1\">"
+        "<title>");
+    httpd_resp_sendstr_chunk(req, titlebuf);
+    httpd_resp_sendstr_chunk(req, "</title>"
+        "<style>"
+        "body{font-family:sans-serif;margin:1rem}"
+        ".row{margin:0.75rem 0}"
+        ".btn{padding:0.6rem 1rem;margin:0.25rem;border:1px solid #ccc;border-radius:10px;cursor:pointer}"
+        ".btn.pushed{background:#ddd}"
+        "#status{width:95%;height:16rem;border:1px solid #ccc;padding:0.5rem;white-space:pre;overflow:auto}"
+        ".group{font-weight:600;margin-right:0.5rem}"
+        "</style></head><body>");
+    httpd_resp_sendstr_chunk(req, "<h2>");
+    httpd_resp_sendstr_chunk(req, titlebuf);
+    httpd_resp_sendstr_chunk(req, "</h2>");
       const char *current_group = NULL;
       for (size_t i = 0; i < sizeof(ROUTES) / sizeof(ROUTES[0]); ++i) {
         const route_t *r = &ROUTES[i];
