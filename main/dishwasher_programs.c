@@ -48,8 +48,6 @@ void prepare_programs(void) {
   // find chosen program
   Program_Entry current = {0};
   bool found = false;
-  long long min_time = 0;
-  long long max_time = 0;
   long long step_min_time = 0;
   long long step_max_time = 0;
 int cycle=1;
@@ -57,6 +55,8 @@ char last_cycle[10]="";
 
 
   for (int i = 0; i < NUM_PROGRAMS; i++) {
+  long long min_time = 0;
+  long long max_time = 0;
     current = Programs[i];
     // compute min/max times and print steps
     for (size_t l = 0; l < current.num_lines; l++) {
