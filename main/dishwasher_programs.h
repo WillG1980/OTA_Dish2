@@ -138,7 +138,7 @@ static inline void IRAM_ATTR gpio_mask_toggle(uint64_t mask) {
 
 #define NUM_LEDS 8
 static const uint64_t ALL_ACTORS = HEAT | SPRAY | INLET | DRAIN | SOAP;
-#define NUM_PROGRAMS 3
+#define NUM_PROGRAMS 4
 
 #define SEC (1) // 1 second is one second
 #define MIN (60)   // 60 seconds in one minute
