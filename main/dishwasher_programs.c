@@ -130,3 +130,54 @@ void run_program(void *pvParameters) {
   vTaskDelete(NULL);
 }
 
+void reset_active_status(void){
+  // Initialize any other fields as necessary
+    ActiveStatus.CurrentTemp=0;
+  ActiveStatus.CurrentPower=0;
+  ActiveStatus.time_full_start=0;
+  ActiveStatus.time_full_total=0;
+  ActiveStatus.time_cycle_start=0;
+  ActiveStatus.time_cycle_total=0;
+  ActiveStatus.time_total=0;
+  ActiveStatus.time_elapsed=0;
+  ActiveStatus.time_start=0;
+  ActiveStatus.time_full_start = 0;
+  ActiveStatus.time_full_total = 0;
+  ActiveStatus.LastTransitionMs=0;
+  ActiveStatus.ProgramStartMs=0; 
+    ActiveStatus.ProgramPlannedTotalMs=0;
+
+
+  
+  ActiveStatus.ActiveDeviceMask=0; 
+
+  ActiveStatus.StepIndex=0;
+  ActiveStatus.StepsTotal=0;
+  ActiveStatus.CycleIndex=0;
+  ActiveStatus.CyclesTotal=0;
+  ActiveStatus.ActiveDeviceMask = 0;
+  
+
+
+  // Initialize string fields to empty strings
+  ActiveStatus.Cycle[0] = '\0';
+  ActiveStatus.Step[0] = '\0';
+
+  ActiveStatus.IPAddress[0] = '\0';
+  ActiveStatus.FirmwareStatus[0] = '\0';
+  ActiveStatus.Program[0] = '\0';
+  ActiveStatus.Cycle='\0';
+  ActiveStatus.Step='\0';
+  ActiveStatus.Program='\0';
+  ActiveStatus.ActiveDevices='\0';
+  ActiveStatus.ActiveLEDs='\0';
+  ActiveStatus.Active_Program.name[0] = '\0';
+  ActiveStatus.Cycle[0] = '\0';
+  ActiveStatus.Step[0] = '\0';
+  ActiveStatus.Program[0] = '\0';
+  
+  bool HEAT_REQUESTED=false;
+  bool SoapHasDispensed=false;
+  
+
+}

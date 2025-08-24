@@ -42,6 +42,7 @@ static void apply_step_outputs(uint32_t mask, bool heater_on) {
 }
 
 bool run_program_by_name(const char *program_name) {
+    
     _LOG_D("Start of function");
     const Programs *prog = find_program_by_name(program_name);
     if (!prog) {
@@ -49,7 +50,7 @@ bool run_program_by_name(const char *program_name) {
         _LOG_D("Exiting function");
         return false;
     }
-
+    
     _LOG_I("Selected program: %s (steps=%u)", prog->name, (unsigned)prog->line_count);
 
     // Initial start delay: 30 seconds
@@ -62,7 +63,6 @@ bool run_program_by_name(const char *program_name) {
         const int min_time_s = (int)ln->min_time;      // seconds
         const int max_temp_f = (int)ln->max_temp_f;    // degrees F (0 => ignore)
         const TickType_t poll_ticks = pdMS_TO_TICKS(30 * 1000);
-
         _LOG_I("Step %u/%u: cycle='%s' step='%s' min_time=%ds max_temp=%dF mask=0x%08x",
                (unsigned)(i+1), (unsigned)prog->line_count,
                ln->cycle ? ln->cycle : "", ln->step ? ln->step : "",
@@ -77,7 +77,6 @@ bool run_program_by_name(const char *program_name) {
 
         bool reached_temp = false;
         TickType_t hold_until = 0;
-
         // If no max_temp requirement, just hold for min_time and move on.
         if (max_temp_f <= 0) {
             _LOG_I("No max_temp target; running for min_time=%ds", min_time_s);

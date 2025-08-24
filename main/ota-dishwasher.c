@@ -214,7 +214,6 @@ void app_main(void) {
 
   gpio_mask_config_outputs(ALL_ACTORS);
   gpio_mask_clear(HEAT | SPRAY | INLET | DRAIN | SOAP); // set all pins to off
-
   Matrix_BindWireFixedGND(1);
   // Harness → ESP32 GPIO
   Matrix_BindWire(2, GPIO_NUM_35);  // Cancel return (input-only; add ext PU)
@@ -228,10 +227,6 @@ void app_main(void) {
 
   _start_temp_monitor();
   _init_LED();
-  
-  
-
-  
   _LOG_I("Booting: %s", boot_partition_cstr());
   _LOG_I("Running: %s", running_partition_cstr());
   esp_log_level_set("*", ESP_LOG_DEBUG);
@@ -244,15 +239,12 @@ void app_main(void) {
 
   start_webserver();
   //  check_and_perform_ota();
-  vTaskDelay(pdMS_TO_TICKS(10000));
-
-
   // Keep main alive but yield CPU — do not busy-loop
   while (1) {
-    if (strcmp(ActiveStatus.Cycle, "fini") == 0) {
+/*    if (strcmp(ActiveStatus.Cycle, "fini") == 0) {
       log_uptime_hms();
       enter_ship_mode_forever(); // load is finished, shut down
-    }
+    }*/
     vTaskDelay(pdMS_TO_TICKS(10000));
   }
 }

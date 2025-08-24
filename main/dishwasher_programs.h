@@ -326,7 +326,6 @@ typedef struct {
   int64_t time_start;
   char Cycle[10];
   char Step[10];
-  char statusstring[512]; // OPTIMIZATION: Fixed size buffer
   char IPAddress[16];     // OPTIMIZATION: Fixed size for IP
   char FirmwareStatus[20];
   char Program[10];
@@ -334,6 +333,7 @@ typedef struct {
   char ActiveDevices[NUM_DEVICES]; // result of return_masked_bits
   char ActiveLEDs[NUM_LEDS];       // bitmask of active LED names
   bool SoapHasDispensed;
+
   uint64_t ActiveDeviceMask; // BIT64 mask of all active devices
   int32_t StepIndex;
   int32_t StepsTotal;
