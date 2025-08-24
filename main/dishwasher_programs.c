@@ -70,7 +70,7 @@ char last_cycle[10]="";
       step_min_time = (long long)Line->min_time;
       min_time+=step_min_time;
 
-      step_max_time =(long long)((Line->max_time > 0) ? Line->max_time : Line->min_time);
+      step_max_time =(long long)((Line->max_time > 1) ? Line->max_time : Line->min_time);
       max_time+=step_max_time;
 
        _LOG_I("%6s->%6s->%6s\t = Min TTR:%lld\tMax TTR: $lld\tMin Temp:%3d \tMax Temp:%3d \tGPIO:%" PRIu64,
