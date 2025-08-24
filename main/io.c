@@ -358,7 +358,7 @@ static void matrix_task(void *arg) {
           int level = read_gpio(cg);
           bool pressed_sample = (level == SW_COL_PRESSED_LEVEL);
 
-          // Debounce counter
+          // DePress counter
           if (pressed_sample) {
             if (s_sw_cnt[i] < 255) s_sw_cnt[i]++;
           } else {
@@ -372,6 +372,7 @@ static void matrix_task(void *arg) {
             new_stable = true; // just became pressed
             SWITCHES[i].Pressed_NOW = true;
             SWITCHES[i].Pressed_Registered = true;
+            _LOG_I("Switch '%s' pressed", SWITCHES[i].name);
           } else if (was_stable && s_sw_cnt[i] == 0) {
             new_stable = false; // released
           }
