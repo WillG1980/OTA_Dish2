@@ -125,7 +125,7 @@ void run_program(void *pvParameters) {
       ActiveStatus.CycleIndex++;
       ActiveStatus.time_cycle_start = get_unix_epoch();
       ActiveStatus.time_cycle_total = get_unix_epoch() + Line->min_time; // rough estimate
-      strcpy(old_cycle, Line->name_cycle);
+      setCharArray(old_cycle, Line->name_cycle);
     }
     gpio_mask_clear(HEAT | SPRAY | INLET | DRAIN | SOAP); // set all pins to off
 
