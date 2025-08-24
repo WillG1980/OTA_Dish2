@@ -454,6 +454,39 @@ esp_err_t _init_Switch(void) {
 }
 
 // ====== Public API: LEDs ======
+
+esp_err_t LED_STROBE(const char *name, int time_on, int time_off, int total_blinks) {
+  if (time_on < 0 || time_off < 0 || total_blinks <= 0) {
+    return ESP_ERR_INVALID_ARG;
+  }
+_LOG_I("LED_STROBE called with name=%s, time_on=%d, time_off=%d, total_blinks=%d",
+       name, time_on, time_off, total_blinks);
+  int idx = find_led_idx(name);
+  if (idx < 0) return ESP_ERR_NOT_FOUND;
+
+  for (int i = 0; i < total_blinks; ++i) {
+    xSemaphoreTake(s_lock, portMAX_DELAY);
+    LEDS[idx].status = true;
+    xSemaphoreGive(s_lock);
+    vTaskDelay(pdMS_TO_TICKS((uint32_t)time_on));
+    xSemaphoreTake(s_lock, portMAX_DELAY);
+    LEDS[idx].status = false;
+    xSemaphoreGive(s_lock);
+    if (i + 1 < total_blinks) {
+      vTaskDelay(pdMS_TO_TICKS((uint32_t)time_off));
+    }
+  }
+  return ESP_OK;
+
+
+
+}
+
+
+
+
+
+
 esp_err_t LED_Toggle(const char *name, led_cmd_t op) {
   _LOG_I("LED_Toggle called with name=%s, op=%d", name, op);
   int idx = find_led_idx(name);
