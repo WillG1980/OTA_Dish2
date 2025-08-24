@@ -361,6 +361,20 @@ void start_webserver(void) {
   // Status endpoint (POST-only)
   register_uri_post(s_server, "/status", handle_status);
 
+
+httpd_uri_t status_get = { .uri="/status", .method=HTTP_GET, .handler=handle_status, .user_ctx=NULL };
+httpd_register_uri_handler(s_server, &status_get);
+
+
+
+
+
+
+
+
+
+
+
   started = true;
   _LOG_I("webserver started");
 }
