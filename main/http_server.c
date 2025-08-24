@@ -466,7 +466,7 @@ static esp_err_t generic_action_handler(httpd_req_t *req) {
 static esp_err_t root_get_handler(httpd_req_t *req) {
     httpd_resp_set_type(req, "text/html");
 
-    const char *ip = (ActiveStatus.IPAddress && ActiveStatus.IPAddress[0]) ? ActiveStatus.IPAddress : "(no IP)";
+    const char *ip = (ActiveStatus.IPAddress[0]) ? ActiveStatus.IPAddress : "(no IP)";
     char titlebuf[160];
     snprintf(titlebuf, sizeof(titlebuf), "Dishwasher Controller: %s %s", VERSION, ip);
 
