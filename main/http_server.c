@@ -178,39 +178,53 @@ static void register_action_routes(httpd_handle_t s) {
 static esp_err_t root_get_handler(httpd_req_t *req) {
     httpd_resp_set_type(req, "text/html");
     httpd_resp_sendstr_chunk(req,
-        "<!doctype html><html><head><meta charset=\\"utf-8\\"><meta name=\\"viewport\\" content=\\"width=device-width, initial-scale=1\\">"
+        "<!doctype html><html><head>"
+        "<meta charset=\"utf-8\">"
+        "<meta name=\"viewport\" content=\"width=device-width, initial-scale=1\">"
         "<title>Dishwasher</title>"
-        "<style>body{font-family:sans-serif;margin:1rem} .row{margin:0.75rem 0}"
+        "<style>"
+        "body{font-family:sans-serif;margin:1rem}"
+        ".row{margin:0.75rem 0}"
         ".btn{padding:0.6rem 1rem;margin:0.25rem;border:1px solid #ccc;border-radius:10px;cursor:pointer}"
-        ".btn.pushed{background:#ddd} #status{width:95%;height:16rem;border:1px solid #ccc;padding:0.5rem;white-space:pre;overflow:auto}"
-        ".group{font-weight:600;margin-right:0.5rem}</style></head><body>");
+        ".btn.pushed{background:#ddd}"
+        "#status{width:95%;height:16rem;border:1px solid #ccc;padding:0.5rem;white-space:pre;overflow:auto}"
+        ".group{font-weight:600;margin-right:0.5rem}"
+        "</style></head><body>"
+    );
 
     const char *current_group = NULL;
     for (size_t i = 0; i < sizeof(ROUTES)/sizeof(ROUTES[0]); ++i) {
         const route_t *r = &ROUTES[i];
         if (!current_group || strcmp(current_group, r->group) != 0) {
             if (current_group) httpd_resp_sendstr_chunk(req, "</div>");
-            httpd_resp_sendstr_chunk(req, "<div class=\"row\"><span class=\"group\">"); httpd_resp_sendstr_chunk(req, r->group); httpd_resp_sendstr_chunk(req, ":</span>");
+            httpd_resp_sendstr_chunk(req, "<div class=\"row\"><span class=\"group\">");
+            httpd_resp_sendstr_chunk(req, r->group);
+            httpd_resp_sendstr_chunk(req, ":</span>");
             current_group = r->group;
         }
-        httpd_resp_sendstr_chunk(req, "<button class=\"btn\" data-uri=\""); httpd_resp_sendstr_chunk(req, r->uri); httpd_resp_sendstr_chunk(req, "\">"); httpd_resp_sendstr_chunk(req, r->name); httpd_resp_sendstr_chunk(req, "</button>");
+        httpd_resp_sendstr_chunk(req, "<button class=\"btn\" data-uri=\"");
+        httpd_resp_sendstr_chunk(req, r->uri);
+        httpd_resp_sendstr_chunk(req, "\">");
+        httpd_resp_sendstr_chunk(req, r->name);
+        httpd_resp_sendstr_chunk(req, "</button>");
     }
     if (current_group) httpd_resp_sendstr_chunk(req, "</div>");
 
     httpd_resp_sendstr_chunk(req,
         "<h3>Status</h3><pre id=\"status\"></pre>"
-        "<script>\n"
-        "const statusBox=document.getElementById('status');\n"
-        "async function refresh(){try{const r=await fetch('/status');const t=await r.text();statusBox.textContent=t;}catch(e){statusBox.textContent='(error fetching /status)'}}\n"
-        "function pushMark(btn){btn.classList.add('pushed');setTimeout(()=>btn.classList.remove('pushed'),2000)}\n"
-        "async function fire(uri,btn){pushMark(btn);try{await fetch(uri,{method:'POST'});}catch(e){} setTimeout(refresh,1000);}\n"
-        "document.querySelectorAll('.btn').forEach(b=>b.addEventListener('click',()=>fire(b.dataset.uri,b)));\n"
-        "setInterval(refresh,10000);\n"
-        "refresh();\n"
-        "</script>");
+        "<script>"
+        "const statusBox=document.getElementById('status');"
+        "async function refresh(){try{const r=await fetch('/status');const t=await r.text();statusBox.textContent=t;}catch(e){statusBox.textContent='(error fetching /status)'}}"
+        "function pushMark(btn){btn.classList.add('pushed');setTimeout(()=>btn.classList.remove('pushed'),2000)}"
+        "async function fire(uri,btn){pushMark(btn);try{await fetch(uri,{method:'POST'});}catch(e){} setTimeout(refresh,1000);}"
+        "document.querySelectorAll('.btn').forEach(b=>b.addEventListener('click',()=>fire(b.dataset.uri,b)));"
+        "setInterval(refresh,10000);"
+        "refresh();"
+        "</script>"
+        "</body></html>"
+    );
 
-    httpd_resp_sendstr_chunk(req, "</body></html>");
-    return httpd_resp_sendstr_chunk(req, NULL);
+    return httpd_resp_sendstr_chunk(req, NULL); // end chunked response
 }
 
 // ──────────────────────────────────────────────────────────────────────────────
