@@ -154,6 +154,7 @@ static void json_prop_bool(httpd_req_t *req, bool *first, const char *key,
 
 // Status handler using ActiveStatus (GET only)
 static esp_err_t handle_status(httpd_req_t *req) {
+  char runbuf[512];
   int64_t start_ms = (ActiveStatus.time_full_start > 0)
                          ? ActiveStatus.time_full_start
                          : ActiveStatus.time_start;
@@ -191,17 +192,21 @@ static esp_err_t handle_status(httpd_req_t *req) {
   httpd_resp_set_type(req, "application/json");
   httpd_resp_sendstr_chunk(req, "{");
   bool first = true;
-  json_prop_str(req, &first, "Program", ActiveStatus.Program);
-  json_prop_str(req, &first, "name_cycle", ActiveStatus.Cycle);
-  json_prop_str(req, &first, "name_step", ActiveStatus.Step);
+
+snprintf(runbuf,sizeof(runbuf),"%s->%s->%s Cycle %d of %d, step %d of %d",ActiveStatus.Program,ActiveStatus.Cycle,ActiveStatus.Step,ActiveStatus.CycleIndex,ActiveStatus.CyclesTotal,ActiveStatus.StepIndex,ActiveStatus.StepsTotal);
+  json_prop_str(req, &first, "Program", runbuf);
   json_prop_int(req, &first, "CurrentTemp", ActiveStatus.CurrentTemp);
   char mm1[8], mm2[8], mm3[8], tstart[16], tend[16];
+  
   json_prop_str(req, &first, "since_start_mmss", ms_to_mmss(elapsed_ms, mm1));
   json_prop_str(req, &first, "remaining_mmss", ms_to_mmss(remaining_ms, mm2));
   json_prop_str(req, &first, "eta_finish_mmss", ms_to_mmss(remaining_ms, mm3));
+
   format_est_time_ms(start_ms, tstart);
   format_est_time_ms((start_ms > 0 && total_ms > 0) ? (start_ms + total_ms) : 0,
                      tend);
+
+
   json_prop_str(req, &first, "start_time_est", tstart);
   json_prop_str(req, &first, "end_time_est", tend);
   json_prop_bool(req, &first, "soap_has_dispensed", soap_sticky);
