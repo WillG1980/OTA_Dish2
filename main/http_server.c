@@ -116,7 +116,7 @@ void Perform_action_CYCLE_TESTER(void)  { (void)start_program_if_idle("Tester");
 void Perform_action_CYCLE_HITEMP(void)  { (void)start_program_if_idle("HiTemp"); }
 // DO
 void Perform_action_DO_PAUSE(void)      { _LOG_I("Pause requested"); }
-void Perform_action_DORESUME(void)      { _LOG_I("Resume requested"); }
+void Perform_action_DO_RESUME(void)      { _LOG_I("Resume requested"); }
 // TOGGLE — wire these to your IO layer
 void Perform_action_TOGGLE_DRAIN(void)  { _LOG_I("Toggle Drain"); }
 void Perform_action_TOGGLE_FILL(void)   { _LOG_I("Toggle Fill"); }

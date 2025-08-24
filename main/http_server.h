@@ -19,7 +19,7 @@ typedef enum {
   ACTION_CYCLE_HITEMP,
   // DO actions
   ACTION_DO_PAUSE,
-  ACTION_DORESUME,
+  ACTION_DO_RESUME,
   // Toggle specific device(s)
   ACTION_TOGGLE_DRAIN,
   ACTION_TOGGLE_FILL,
@@ -44,7 +44,7 @@ typedef enum {
     XX(CYCLE , TESTER         , ACTION_CYCLE_TESTER)                               \
     XX(CYCLE , HITEMP         , ACTION_CYCLE_HITEMP)                               \
     XX(DO    , PAUSE          , ACTION_DO_PAUSE)                                   \
-    XX(DO    , RESUME         , ACTION_DORESUME)                                   \
+    XX(DO    , RESUME         , ACTION_DO_RESUME)                                   \
     XX(TOGGLE, DRAIN          , ACTION_TOGGLE_DRAIN)                               \
     XX(TOGGLE, FILL           , ACTION_TOGGLE_FILL)                                \
     XX(TOGGLE, SPRAY          , ACTION_TOGGLE_SPRAY)                               \
