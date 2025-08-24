@@ -246,16 +246,11 @@ static esp_err_t handle_status(httpd_req_t *req) {
 // ---- Action worker & handlers (POST-only) ----
 static bool start_program_if_idle(const char *program_name) {
   if (s_program_task && eTaskGetState(s_program_task) != eDeleted) {
-    _LOG_W("run_program already active; ignoring duplicate START");
+    _LOG_W("run_program already active; ignoring duplicate START %s", program_name ? program_name : "NULL");
     return false;
   }
   if (program_name && program_name[0]) {
-    if (setCharArray) {
       setCharArray(ActiveStatus.Program, program_name);
-    } else {
-      strncpy(ActiveStatus.Program, program_name, sizeof(ActiveStatus.Program)-1);
-      ActiveStatus.Program[sizeof(ActiveStatus.Program)-1] = '\0';
-    }
   }
   if (xTaskCreate(run_program, "run_program", RUN_PROGRAM_STACK, NULL, ACTION_TASK_PRIO, &s_program_task) != pdPASS) {
     _LOG_E("failed to create run_program task");
