@@ -84,35 +84,62 @@ static inline float tempC_from_beta(float Rth) {
 // ──────────────────────────────────────────────────────────────────────────────
 // ADC init
 // ──────────────────────────────────────────────────────────────────────────────
+#include "esp_adc/adc_cali.h"
+#include "esp_adc/adc_cali_scheme.h"
+
 static esp_err_t init_adc_oneshot(void) {
-  if (s_adc) return ESP_OK;
+    if (s_adc) return ESP_OK;
 
-  adc_oneshot_unit_init_cfg_t unit_cfg = { .unit_id = ANALOG_ADC_UNIT };
-  ESP_ERROR_CHECK(adc_oneshot_new_unit(&unit_cfg, &s_adc));
+    adc_oneshot_unit_init_cfg_t unit_cfg = { .unit_id = ANALOG_ADC_UNIT };
+    ESP_ERROR_CHECK(adc_oneshot_new_unit(&unit_cfg, &s_adc));
 
-  adc_oneshot_chan_cfg_t ch_cfg = {
-    .bitwidth = ANALOG_BITWIDTH,
-    .atten    = ANALOG_ADC_ATTEN,
-  };
-  ESP_ERROR_CHECK(adc_oneshot_config_channel(s_adc, ANALOG_ADC_CH, &ch_cfg));
+    adc_oneshot_chan_cfg_t ch_cfg = {
+        .bitwidth = ANALOG_BITWIDTH,
+        .atten    = ANALOG_ADC_ATTEN,
+    };
+    ESP_ERROR_CHECK(adc_oneshot_config_channel(s_adc, ANALOG_ADC_CH, &ch_cfg));
 
-  // Calibration (curve-fitting)
-  adc_cali_curve_fitting_config_t cal_cfg = {
-    .unit_id = ANALOG_ADC_UNIT,
-    .chan    = ANALOG_ADC_CH,
-    .atten   = ANALOG_ADC_ATTEN,
-    .bitwidth = ANALOG_BITWIDTH,
-  };
-  if (adc_cali_create_scheme_curve_fitting(&cal_cfg, &s_cali) == ESP_OK) {
-    s_cal_ok = true;
-    _LOG_I("ADC calibration: curve-fitting enabled");
-  } else {
-    s_cal_ok = false;
-    _LOG_W("ADC calibration unavailable; mv will be estimated");
-  }
+    // Calibration
+    adc_cali_handle_t cali_handle = NULL;
+    bool calibrated = false;
 
-  _LOG_I("ADC oneshot set up on ADC1_CH6 (GPIO34)");
-  return ESP_OK;
+#if ADC_CALI_SCHEME_LINE_FITTING_SUPPORTED
+    adc_cali_line_fitting_config_t cal_cfg = {
+        .unit_id  = ANALOG_ADC_UNIT,
+        .atten    = ANALOG_ADC_ATTEN,
+        .bitwidth = ANALOG_BITWIDTH,
+    };
+    if (adc_cali_create_scheme_line_fitting(&cal_cfg, &cali_handle) == ESP_OK) {
+        s_cal_ok = true;
+        s_cali = cali_handle;
+        calibrated = true;
+        _LOG_I("ADC calibration: line fitting enabled");
+    }
+#endif
+
+#if ADC_CALI_SCHEME_CURVE_FITTING_SUPPORTED
+    if (!calibrated) {
+        adc_cali_curve_fitting_config_t cal_cfg = {
+            .unit_id  = ANALOG_ADC_UNIT,
+            .atten    = ANALOG_ADC_ATTEN,
+            .bitwidth = ANALOG_BITWIDTH,
+        };
+        if (adc_cali_create_scheme_curve_fitting(&cal_cfg, &cali_handle) == ESP_OK) {
+            s_cal_ok = true;
+            s_cali = cali_handle;
+            calibrated = true;
+            _LOG_I("ADC calibration: curve fitting enabled");
+        }
+    }
+#endif
+
+    if (!calibrated) {
+        _LOG_W("ADC calibration not supported; using raw->mv fallback");
+        s_cal_ok = false;
+    }
+
+    _LOG_I("ADC oneshot set up on ADC1_CH6 (GPIO34)");
+    return ESP_OK;
 }
 
 // ──────────────────────────────────────────────────────────────────────────────
