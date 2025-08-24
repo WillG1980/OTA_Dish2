@@ -434,11 +434,10 @@ static esp_err_t generic_action_handler(httpd_req_t *req) {
   const char *name = slash + 1;
   for (size_t i = 0; i < sizeof(ROUTES) / sizeof(ROUTES[0]); ++i) {
     if (strncmp(ROUTES[i].group, p, glen) == 0 &&
-        ROUTES[i].group[glen] == ' ' && strcmp(ROUTES[i].name, name) == 0) {
+        ROUTES[i].group[glen] == '\0' && strcmp(ROUTES[i].name, name) == 0) {
       actions_t a = ROUTES[i].act;
       if (!s_action_queue) {
-        httpd_resp_send_err(req, HTTPD_503_SERVICE_UNAVAILABLE,
-                            "queue not ready");
+        httpd_resp_send_err(req, HTTPD_503_SERVICE_UNAVAILABLE, "queue not ready");
         return ESP_OK;
       }
       if (xQueueSend(s_action_queue, &a, 0) != pdTRUE) {
