@@ -227,38 +227,8 @@ void app_main(void) {
   Matrix_BindWire(12, GPIO_NUM_23);
 
   _start_temp_monitor();
-  
-  vTaskDelay(pdMS_TO_TICKS(2000));
   _init_LED();
-  vTaskDelay(pdMS_TO_TICKS(2000));
   
-  LED_Toggle("status_washing", LED_ON);
-  vTaskDelay(pdMS_TO_TICKS(2000));
-  LED_Toggle("status_washing", LED_OFF);
-  
-  LED_Toggle("status_sensing", LED_ON);
-  vTaskDelay(pdMS_TO_TICKS(2000));
-  LED_Toggle("status_sensing", LED_OFF);
-  
-  LED_Toggle("status_drying", LED_ON);
-  vTaskDelay(pdMS_TO_TICKS(2000));
-  LED_Toggle("status_drying", LED_OFF);
-  
-  LED_Toggle("status_clean", LED_ON);
-  vTaskDelay(pdMS_TO_TICKS(2000));
-  LED_Toggle("status_clean", LED_OFF);
-  
-  LED_Toggle("delay_1", LED_ON);
-  vTaskDelay(pdMS_TO_TICKS(2000));
-  LED_Toggle("delay_1", LED_OFF);
-  
-  LED_Toggle("delay_3", LED_ON);
-  vTaskDelay(pdMS_TO_TICKS(2000));
-  LED_Toggle("delay_3", LED_OFF);
-  
-  LED_Toggle("switch_4", LED_ON);
-vTaskDelay(pdMS_TO_TICKS(2000));
-  LED_Toggle("switch_4", LED_OFF);
   
 
   
