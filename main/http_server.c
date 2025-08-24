@@ -31,7 +31,7 @@
 #define RUN_PROGRAM_STACK  8192
 
 // ===== Externals you already have =====
-extern status_struct ActiveStatus;
+
 extern void run_program(void *);   // your program engine task
 
 // ===== Devices (names for /status list) =====
