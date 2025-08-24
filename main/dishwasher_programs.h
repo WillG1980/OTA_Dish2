@@ -316,6 +316,7 @@ static inline void delay_monitor(int64_t millis, int64_t time_between_beats) {
 
 #ifndef ActiveStatus_defined
 
+
 typedef struct {
   int CurrentTemp;
   int CurrentPower;
