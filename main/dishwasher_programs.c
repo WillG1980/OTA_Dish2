@@ -145,6 +145,11 @@ void run_program(void *pvParameters) {
     vTaskDelay(pdMS_TO_TICKS(5 * SEC)); // run for 5 seconds minimum
 
     for (; TTR > 0; TTR -= 5) {
+      if(ActiveStatus.SkipStep) {
+        ActiveStatus.SkipStep=false;
+        _LOG_W("Skipping step as requested");
+        break;
+      } 
       gpio_mask_set(
           Line->gpio_mask); // set all pins to on every 5 seconds to be safe
       _LOG_I("\t%8s->%8s:%8s\t%d", ActiveStatus.Program, Line->name_cycle,
@@ -199,6 +204,9 @@ void reset_active_status(void) {
   ActiveStatus.Active_Program.min_time = 0;
   ActiveStatus.Active_Program.max_time = 0;
 
-  bool HEAT_REQUESTED = false;
+  ActiveStatus.HEAT_REQUESTED = false;
+  ActiveStatus.SoapHasDispensed = false;
+  ActiveStatus.SkipStep = false;
+
 //  bool SoapHasDispensed = false;
 }

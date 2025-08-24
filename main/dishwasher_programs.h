@@ -326,6 +326,7 @@ typedef struct {
   int64_t time_total;
   int64_t time_elapsed;
   int64_t time_start;
+  bool SkipStep;
   char Cycle[10];
   char Step[10];
   char IPAddress[16];     // OPTIMIZATION: Fixed size for IP

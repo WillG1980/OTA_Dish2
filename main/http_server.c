@@ -311,6 +311,7 @@ __attribute__((weak)) void perform_action_PAUSE(void) {
 __attribute__((weak)) void perform_action_DO_RESUME(void) {
   _LOG_I("Action DO_RESUME");
 }
+
 __attribute__((weak)) void perform_action_DRAIN(void) {
 
   _LOG_I("Action Toggle DRAIN");
@@ -332,6 +333,7 @@ __attribute__((weak)) void perform_action_SOAP(void) {
   _LOG_I("Action SOAP");
   gpio_mask_toggle(SOAP);
 }
+
 __attribute__((weak)) void perform_action_LEDS(void) {
 
   int DELAY = pdMS_TO_TICKS(5000);
@@ -373,6 +375,7 @@ __attribute__((weak)) void perform_action_REBOOT(void) {
 }
 __attribute__((weak)) void perform_action_SKIP_STEP(void) {
   _LOG_I("Action SKIP_STEP");
+  ActiveStatus.SkipStep=true;
 }
 
 // Dispatch table from enum to perform_action_<BUTTON>()
