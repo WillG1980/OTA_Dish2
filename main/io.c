@@ -455,6 +455,7 @@ esp_err_t _init_Switch(void) {
 
 // ====== Public API: LEDs ======
 esp_err_t LED_Toggle(const char *name, led_cmd_t op) {
+  _LOG_I("LED_Toggle called with name=%s, op=%d", name, op);
   int idx = find_led_idx(name);
   if (idx < 0) return ESP_ERR_NOT_FOUND;
   xSemaphoreTake(s_lock, portMAX_DELAY);
