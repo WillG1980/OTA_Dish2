@@ -193,7 +193,7 @@ static esp_err_t handle_status(httpd_req_t *req) {
   httpd_resp_sendstr_chunk(req, "{");
   bool first = true;
 
-snprintf(runbuf,sizeof(runbuf),"%s->%s->%s Cycle %d of %d, step %d of %d",ActiveStatus.Program,ActiveStatus.Cycle,ActiveStatus.Step,ActiveStatus.CycleIndex,ActiveStatus.CyclesTotal,ActiveStatus.StepIndex,ActiveStatus.StepsTotal);
+snprintf(runbuf,sizeof(runbuf),"%s->%s->%s Cycle %ld of %ld, step %ld of %ld",ActiveStatus.Program,ActiveStatus.Cycle,ActiveStatus.Step,ActiveStatus.CycleIndex,ActiveStatus.CyclesTotal,ActiveStatus.StepIndex,ActiveStatus.StepsTotal);
   json_prop_str(req, &first, "Program", runbuf);
   json_prop_int(req, &first, "CurrentTemp", ActiveStatus.CurrentTemp);
   char mm1[8], mm2[8], mm3[8], tstart[16], tend[16];
