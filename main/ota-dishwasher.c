@@ -227,6 +227,7 @@ void app_main(void) {
 
   _start_temp_monitor();
   _init_LED();
+  _init_Switch();
   _LOG_I("Booting: %s", boot_partition_cstr());
   _LOG_I("Running: %s", running_partition_cstr());
   esp_log_level_set("*", ESP_LOG_DEBUG);
