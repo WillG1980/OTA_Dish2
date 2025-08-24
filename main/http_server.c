@@ -34,7 +34,7 @@
 // ---- Externals present in your project ----
 extern status_struct ActiveStatus;
 extern void run_program(void *);                 // your program engine task
-extern void setCharArray(char *dst, const char *src); // optional helper (safe strncpy)
+//extern void setCharArray(char *dst, const char *src); // optional helper (safe strncpy)
 
 // ---- Devices enum (for names list; keep *_MAX last) ----
 typedef enum {
