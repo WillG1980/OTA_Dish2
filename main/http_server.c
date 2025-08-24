@@ -312,14 +312,26 @@ __attribute__((weak)) void perform_action_DO_RESUME(void) {
   _LOG_I("Action DO_RESUME");
 }
 __attribute__((weak)) void perform_action_DRAIN(void) {
-  _LOG_I("Action DRAIN");
+
+  _LOG_I("Action Toggle DRAIN");
+  gpio_mask_toggle(DRAIN);
 }
-__attribute__((weak)) void perform_action_FILL(void) { _LOG_I("Action FILL"); }
+__attribute__((weak)) void perform_action_FILL(void) {
+  gpio_mask_toggle(INLET);
+  _LOG_I("Action INLET");
+}
 __attribute__((weak)) void perform_action_SPRAY(void) {
   _LOG_I("Action SPRAY");
+  gpio_mask_toggle(SPRAY);
 }
-__attribute__((weak)) void perform_action_HEAT(void) { _LOG_I("Action HEAT"); }
-__attribute__((weak)) void perform_action_SOAP(void) { _LOG_I("Action SOAP"); }
+__attribute__((weak)) void perform_action_HEAT(void) {
+  _LOG_I("Action HEAT");
+  gpio_mask_toggle(HEAT);
+}
+__attribute__((weak)) void perform_action_SOAP(void) {
+  _LOG_I("Action SOAP");
+  gpio_mask_toggle(SOAP);
+}
 __attribute__((weak)) void perform_action_LEDS(void) {
 
   int DELAY = pdMS_TO_TICKS(5000);
@@ -547,30 +559,39 @@ static esp_err_t root_get_handler(httpd_req_t *req) {
   if (current_group) {
     httpd_resp_sendstr_chunk(req, "</div>");
   }
-httpd_resp_sendstr_chunk(
-          req,
-          "<h3>Status</h3><div id=\"status\"><table id=\"statTable\"></table></div>"
-          "<script>"
-          "const statTable=document.getElementById('statTable');"
-          "function esc(s){return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;');}"
-          "function renderStatus(d){"
-            "const keys=Object.keys(d).sort();"
-            "let html='';"
-            "for(let i=0;i<keys.length;i++){"
-              "const k=keys[i];"
-              "let v=d[k];"
-              "if(v===null||v===undefined){v='';}"
-              "else if(typeof v==='object'){try{v=JSON.stringify(v);}catch(_){v=String(v);}}"
-              "html+='<tr><th>'+esc(k)+'</th><td>'+esc(v)+'</td></tr>';"
-            "}"
-            "statTable.innerHTML=html;"
-          "}"
-          "async function refresh(){try{const r=await fetch('/status');const j=await r.json();renderStatus(j);}catch(e){statTable.innerHTML='<tr><td>(error fetching /status)</td></tr>';}}"
-          "function pushMark(btn){btn.classList.add('pushed');setTimeout(()=>btn.classList.remove('pushed'),2000);}"
-          "async function fire(uri,btn){pushMark(btn);try{await fetch(uri,{method:'POST'});}catch(e){} setTimeout(refresh,1000);}"
-          "document.querySelectorAll('.btn').forEach(b=>b.addEventListener('click',()=>fire(b.dataset.uri,b)));"
-          "setInterval(refresh,10000);refresh();"
-          "</script></body></html>");
+  httpd_resp_sendstr_chunk(
+      req,
+      "<h3>Status</h3><div id=\"status\"><table id=\"statTable\"></table></div>"
+      "<script>"
+      "const statTable=document.getElementById('statTable');"
+      "function esc(s){return "
+      "String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;');}"
+      "function renderStatus(d){"
+      "const keys=Object.keys(d).sort();"
+      "let html='';"
+      "for(let i=0;i<keys.length;i++){"
+      "const k=keys[i];"
+      "let v=d[k];"
+      "if(v===null||v===undefined){v='';}"
+      "else if(typeof "
+      "v==='object'){try{v=JSON.stringify(v);}catch(_){v=String(v);}}"
+      "html+='<tr><th>'+esc(k)+'</th><td>'+esc(v)+'</td></tr>';"
+      "}"
+      "statTable.innerHTML=html;"
+      "}"
+      "async function refresh(){try{const r=await fetch('/status');const "
+      "j=await "
+      "r.json();renderStatus(j);}catch(e){statTable.innerHTML='<tr><td>(error "
+      "fetching /status)</td></tr>';}}"
+      "function "
+      "pushMark(btn){btn.classList.add('pushed');setTimeout(()=>btn.classList."
+      "remove('pushed'),2000);}"
+      "async function fire(uri,btn){pushMark(btn);try{await "
+      "fetch(uri,{method:'POST'});}catch(e){} setTimeout(refresh,1000);}"
+      "document.querySelectorAll('.btn').forEach(b=>b.addEventListener('click',"
+      "()=>fire(b.dataset.uri,b)));"
+      "setInterval(refresh,10000);refresh();"
+      "</script></body></html>");
   return httpd_resp_sendstr_chunk(req, NULL);
 }
 
