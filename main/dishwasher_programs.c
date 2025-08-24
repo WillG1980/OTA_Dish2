@@ -73,8 +73,8 @@ char last_cycle[10]="";
        _LOG_I("%6s->%6s->%6s\t = Min TTR:%4" PRIu32 "\tMax TTR:%4" PRIu32
              " \tMin Temp:%3d \tMax Temp:%3d \tGPIO:%" PRIu64,
              SAFE_STR(Programs[i].name), SAFE_STR(Line->name_cycle),
-             SAFE_STR(Line->name_step), (uint32_t)Line->min_time/1000,
-             (uint32_t)Line->max_time/1000, (int)Line->min_temp,
+             SAFE_STR(Line->name_step), (uint32_t)Line->min_time,
+             (uint32_t)Line->max_time, (int)Line->min_temp,
          (int)Line->max_temp, (uint64_t)Line->gpio_mask);
 
             
