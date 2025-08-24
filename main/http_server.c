@@ -57,7 +57,10 @@ static void drain_body(httpd_req_t *req) {
 static bool has_token_ci(const char *s, const char *token) {
     if (!s || !token) return false; 
     size_t n = strlen(token);
-    for (const char *p = s; *p; ++p) if (strncasecmp(p, token, n) == 0) return true; return false;
+    for (const char *p = s; *p; ++p) 
+    if (strncasecmp(p, token, n) == 0) 
+        return true; 
+return false;
 }
 
 // ──────────────────────────────────────────────────────────────────────────────
