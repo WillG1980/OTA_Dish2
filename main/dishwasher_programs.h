@@ -265,8 +265,8 @@ static Program_Entry Programs[NUM_PROGRAMS] = {
      sizeof(NormalProgramLines) / sizeof(NormalProgramLines[0]),0},
     {"HiTemp", HiTempProgramLines,
      sizeof(HiTempProgramLines) / sizeof(HiTempProgramLines[0]),0},
-      {"Cancel", CancelProgramLines,
-     sizeof(CancelProgramLines) / sizeof(CancelProgramLines[0]),0};
+    {"Cancel", CancelProgramLines,
+     sizeof(CancelProgramLines) / sizeof(CancelProgramLines[0]),0}};
 #define setCharArray(target, value)                                            \
   do {                                                                         \
     strncpy((target), (value), sizeof(target) - 1);                            \
