@@ -111,8 +111,8 @@ const size_t SWITCH_COUNT = sizeof(SWITCHES)/ sizeof(SWITCHES[0]);
 */
 
 // ====== Internals ======
-static TaskHandle_t s_matrix_task = NULL;
-static SemaphoreHandle_t s_lock; // protects LEDS[] and SWITCHES[] updates
+TaskHandle_t s_matrix_task = NULL;
+SemaphoreHandle_t s_lock; // protects LEDS[] and SWITCHES[] updates
 
 // Derived unique lists of rows/cols we actually touch
 #define MAX_UNIQUE 16
