@@ -3,8 +3,7 @@
 extern "C" {
 #endif
 
-// Actions accepted by the control API.
-// Keep *_MAX last for easy iteration/array sizing.
+// Actions for control API (enum { ..., *_MAX } style)
 typedef enum {
   ACTION_START = 0,
   ACTION_CANCEL,
@@ -14,7 +13,7 @@ typedef enum {
   ACTION_MAX
 } actions_t;
 
-// Start/stop the embedded webserver (idempotent start).
+// Server lifecycle
 void start_webserver(void);
 void stop_webserver(void);
 

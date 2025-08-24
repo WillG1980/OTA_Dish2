@@ -1,9 +1,7 @@
-// POST-only HTTP server with /action/* endpoints and a rich /status payload.
-// - Uses enum { ..., ACTION_MAX } style.
-// - Idempotent start_webserver() that does its own init (queue + worker).
-// - Only one run_program task may be active at a time.
-// - /status returns Program, name_cycle, name_step, CurrentTemp, start time,
-//   ETA, remaining, active device list, and a sticky soap indicator.
+// Minimal POST-only HTTP server:
+// - /status returns JSON via chunked transfer; times are mm:ss
+// - /action/* control endpoints (simple queue + single-run guard)
+// - No big JSON buffers, no append helper
 
 #include "esp_http_server.h"
 #include "esp_timer.h"
@@ -11,30 +9,32 @@
 #include "freertos/FreeRTOS.h"
 #include "freertos/queue.h"
 #include "freertos/task.h"
-#include <string.h>
-#include <strings.h>
+
 #include <stdbool.h>
+#include <stdint.h>
 #include <stdio.h>
+#include <string.h>
+#include <strings.h>  // strncasecmp
 
 #include "http_server.h"
-#include "dishwasher_programs.h"   // status_struct ActiveStatus, run_program(), etc.
+#include "dishwasher_programs.h"   // extern status_struct ActiveStatus; run_program()
 #include "local_ota.h"             // check_and_perform_ota()
 
-// ---- Logging ----
 #ifndef TAG
 #define TAG "http_server"
 #endif
 
-// ---- Compile-time config ----
+// ===== Config =====
 #define ACTION_QUEUE_LEN   16
 #define ACTION_TASK_STACK  4096
 #define ACTION_TASK_PRIO   5
 #define RUN_PROGRAM_STACK  8192
 
-// ---- Externals present in your project ----
-extern void run_program(void *);                 // your program engine task
+// ===== Externals you already have =====
+extern status_struct ActiveStatus;
+extern void run_program(void *);   // your program engine task
 
-// ---- Devices enum (for names list; keep *_MAX last) ----
+// ===== Devices (names for /status list) =====
 typedef enum {
   DEVICE_HEAT = 0,
   DEVICE_SPRAY,
@@ -48,26 +48,17 @@ static const char *DEVICE_NAMES[DEVICE_MAX] = {
   "Heat","Spray","Fill","Drain","Soap"
 };
 
-// ---- Module state ----
+// ===== Module state =====
 static httpd_handle_t s_server       = NULL;
 static QueueHandle_t  s_action_queue = NULL;
 static TaskHandle_t   s_action_task  = NULL;
-static TaskHandle_t   s_program_task = NULL;  // single-run guard
-
-typedef struct {
-  actions_t action;
-  int64_t   enqueued_ms;
-} action_item_t;
-
-static action_item_t s_qmirror[ACTION_QUEUE_LEN];
-static size_t s_q_head = 0;
-static size_t s_q_size = 0;
+static TaskHandle_t   s_program_task = NULL; // single-run guard
 
 // Sticky soap indicator for the current program
 static bool    s_soap_dispensed_sticky = false;
 static int64_t s_last_program_start_ms = -1;
 
-// ---- Utilities ----
+// ===== Helpers =====
 static inline int64_t now_ms(void) { return esp_timer_get_time() / 1000; }
 
 static const char* action_name(actions_t a) {
@@ -81,43 +72,14 @@ static const char* action_name(actions_t a) {
   }
 }
 
-static void mirror_push(actions_t a) {
-  if (s_q_size < ACTION_QUEUE_LEN) {
-    size_t idx = (s_q_head + s_q_size) % ACTION_QUEUE_LEN;
-    s_qmirror[idx].action = a;
-    s_qmirror[idx].enqueued_ms = now_ms();
-    s_q_size++;
-  } else {
-    s_qmirror[s_q_head].action = a;
-    s_qmirror[s_q_head].enqueued_ms = now_ms();
-    s_q_head = (s_q_head + 1) % ACTION_QUEUE_LEN;
-  }
-}
-
-static void mirror_pop_front(void) {
-  if (s_q_size > 0) {
-    s_q_head = (s_q_head + 1) % ACTION_QUEUE_LEN;
-    s_q_size--;
-  }
-}
-
-static void log_queue_snapshot(void) {
-  if (s_q_size == 0) {
-    _LOG_D("queue: [empty]");
-    return;
-  }
-  char buf[256]; buf[0] = 0;
-  size_t pos = 0, cap = sizeof(buf);
-  for (size_t i = 0; i < s_q_size; i++) {
-    size_t idx = (s_q_head + i) % ACTION_QUEUE_LEN;
-    const char *name = action_name(s_qmirror[idx].action);
-    int n = snprintf(buf + pos, (pos < cap) ? cap - pos : 0, "%s%s", name,
-                     (i + 1 < s_q_size) ? " -> " : "");
-    if (n < 0) break;
-    pos += (size_t)n;
-    if (pos >= cap) break;
-  }
-  _LOG_D("queue snapshot: %s", buf[0] ? buf : "(overflow)");
+// mm:ss formatter; returns pointer to provided buffer
+static const char* ms_to_mmss(int64_t ms, char out[8]) {
+  if (ms < 0) { strcpy(out, "--:--"); return out; }
+  int64_t secs = ms / 1000;
+  int mm = (int)(secs / 60);
+  int ss = (int)(secs % 60);
+  snprintf(out, 8, "%02d:%02d", mm, ss);
+  return out;
 }
 
 static void drain_body(httpd_req_t *req) {
@@ -139,8 +101,8 @@ static bool has_token_ci(const char *s, const char *token) {
   return false;
 }
 
-// Parse ActiveStatus.ActiveDevices into boolean flags.
-// Accepts either words ("heat", "spray", ...) or letter codes H,S,F,D,P.
+// Parse ActiveStatus.ActiveDevices into per-device booleans
+// Accepts either words ("heat") or letter codes (H,S,F, D, P)
 static void parse_active_devices(const char *src, bool on[DEVICE_MAX]) {
   for (int i = 0; i < DEVICE_MAX; i++) on[i] = false;
   if (!src) return;
@@ -163,7 +125,7 @@ static void parse_active_devices(const char *src, bool on[DEVICE_MAX]) {
   }
 }
 
-// ---- /status (POST-only) ----
+// ===== /status (POST-only, chunked JSON, times = mm:ss) =====
 static esp_err_t handle_status(httpd_req_t *req) {
   drain_body(req);
 
@@ -176,77 +138,108 @@ static esp_err_t handle_status(httpd_req_t *req) {
                       ? ActiveStatus.time_full_total
                       : ActiveStatus.time_total;
 
-  // Reset sticky soap on new program start
+  // Detect program change to reset sticky soap
   if (start_ms > 0 && start_ms != s_last_program_start_ms) {
     s_last_program_start_ms = start_ms;
     s_soap_dispensed_sticky = false;
   }
 
-  // Remaining time:
-  // Prefer explicit fields; else derive from start+total-now.
+  // Compute elapsed/remaining
+  int64_t elapsed_ms = -1;
+  if (ActiveStatus.time_elapsed >= 0) {
+    elapsed_ms = ActiveStatus.time_elapsed;
+  } else if (start_ms > 0) {
+    elapsed_ms = now_ms() - start_ms;
+    if (elapsed_ms < 0) elapsed_ms = 0;
+  }
+
   int64_t remaining_ms = -1;
   if (ActiveStatus.time_total > 0 && ActiveStatus.time_elapsed >= 0) {
     remaining_ms = ActiveStatus.time_total - ActiveStatus.time_elapsed;
-    if (remaining_ms < 0) remaining_ms = 0;
   } else if (start_ms > 0 && total_ms > 0) {
     remaining_ms = (start_ms + total_ms) - now_ms();
-    if (remaining_ms < 0) remaining_ms = 0;
   }
+  if (remaining_ms < 0) remaining_ms = 0;
 
-  int64_t eta_ms = -1;
-  if (start_ms > 0 && total_ms > 0) {
-    eta_ms = start_ms + total_ms;
-  } else if (remaining_ms >= 0) {
-    eta_ms = now_ms() + remaining_ms;
-  }
+  // "ETA" expressed as time-from-now (same units mm:ss)
+  int64_t eta_from_now_ms = remaining_ms;
 
   bool on[DEVICE_MAX];
   parse_active_devices(ActiveStatus.ActiveDevices, on);
 
-  // Make soap sticky for the current program if observed active or step == "Soap"
+  // Make soap sticky if seen active or when step says "soap"
   if (on[DEVICE_SOAP] || has_token_ci(ActiveStatus.Step, "soap")) {
     s_soap_dispensed_sticky = true;
   }
 
-  // JSON
-  char json[1024];
-  size_t pos = 0;
-  //#define APPEND(fmt, ...) do {  int n = snprintf(json + pos, (pos < sizeof(json)) ? sizeof(json) - pos : 0, fmt, __VA_ARGS__);  if (n < 0) n = 0; pos += (size_t)n;   } while(0)
-  
-  httpd_resp_set_type(req, "application/json");
-  APPEND("{");
-  APPEND("\"Program\":\"%s\",", ActiveStatus.Program);
-  APPEND("\"name_cycle\":\"%s\",", ActiveStatus.Cycle);
-  APPEND("\"name_step\":\"%s\",",  ActiveStatus.Step);
-  APPEND("\"CurrentTemp\":%d,",    ActiveStatus.CurrentTemp);
-  APPEND("\"start_time_epoch_ms\":%lld,", (long long)(start_ms > 0 ? start_ms : -1));
-  APPEND("\"eta_finish_epoch_ms\":%lld,", (long long)(eta_ms   > 0 ? eta_ms   : -1));
-  APPEND("\"remaining_ms\":%lld,",        (long long)(remaining_ms >= 0 ? remaining_ms : -1));
-  APPEND("\"active_devices\":[");
-    bool first = true;
-    for (int d = 0; d < DEVICE_MAX; d++) {
-      if (on[d]) {
-        APPEND("%s\"%s\"", first ? "" : ",", DEVICE_NAMES[d]);
-        first = false;
-      }
-    }
-  APPEND("],");
-  APPEND("\"soap_has_dispensed\":%s", s_soap_dispensed_sticky ? "true" : "false");
-  APPEND("}\n");
+  char num[64], mmss1[8], mmss2[8], mmss3[8];
 
-  httpd_resp_send(req, json, HTTPD_RESP_USE_STRLEN);
+  httpd_resp_set_type(req, "application/json");
+  httpd_resp_sendstr_chunk(req, "{");
+
+  httpd_resp_sendstr_chunk(req, "\"Program\":\"");
+  httpd_resp_sendstr_chunk(req, ActiveStatus.Program);
+  httpd_resp_sendstr_chunk(req, "\",");
+
+  httpd_resp_sendstr_chunk(req, "\"name_cycle\":\"");
+  httpd_resp_sendstr_chunk(req, ActiveStatus.Cycle);
+  httpd_resp_sendstr_chunk(req, "\",");
+
+  httpd_resp_sendstr_chunk(req, "\"name_step\":\"");
+  httpd_resp_sendstr_chunk(req, ActiveStatus.Step);
+  httpd_resp_sendstr_chunk(req, "\",");
+
+  snprintf(num, sizeof(num), "\"CurrentTemp\":%d,", ActiveStatus.CurrentTemp);
+  httpd_resp_sendstr_chunk(req, num);
+
+  // Times as mm:ss
+  httpd_resp_sendstr_chunk(req, "\"since_start_mmss\":\"");
+  httpd_resp_sendstr_chunk(req, ms_to_mmss(elapsed_ms, mmss1));
+  httpd_resp_sendstr_chunk(req, "\",");
+
+  httpd_resp_sendstr_chunk(req, "\"remaining_mmss\":\"");
+  httpd_resp_sendstr_chunk(req, ms_to_mmss(remaining_ms, mmss2));
+  httpd_resp_sendstr_chunk(req, "\",");
+
+  httpd_resp_sendstr_chunk(req, "\"eta_finish_mmss\":\"");
+  httpd_resp_sendstr_chunk(req, ms_to_mmss(eta_from_now_ms, mmss3));
+  httpd_resp_sendstr_chunk(req, "\",");
+
+  // active_devices
+  httpd_resp_sendstr_chunk(req, "\"active_devices\":[");
+  bool first = true;
+  for (int d = 0; d < DEVICE_MAX; d++) {
+    if (on[d]) {
+      if (!first) httpd_resp_sendstr_chunk(req, ",");
+      httpd_resp_sendstr_chunk(req, "\"");
+      httpd_resp_sendstr_chunk(req, DEVICE_NAMES[d]);
+      httpd_resp_sendstr_chunk(req, "\"");
+      first = false;
+    }
+  }
+  httpd_resp_sendstr_chunk(req, "],");
+
+  httpd_resp_sendstr_chunk(req, "\"soap_has_dispensed\":");
+  httpd_resp_sendstr_chunk(req, s_soap_dispensed_sticky ? "true" : "false");
+
+  httpd_resp_sendstr_chunk(req, "}\n");
+  httpd_resp_send_chunk(req, NULL, 0); // end chunked response
   return ESP_OK;
 }
 
-// ---- Action worker & handlers (POST-only) ----
+// ===== Actions (simple queue + worker) =====
+static void assign_program(const char *name) {
+  if (!name) return;
+  strncpy(ActiveStatus.Program, name, sizeof(ActiveStatus.Program) - 1);
+  ActiveStatus.Program[sizeof(ActiveStatus.Program) - 1] = '\0';
+}
+
 static bool start_program_if_idle(const char *program_name) {
   if (s_program_task && eTaskGetState(s_program_task) != eDeleted) {
-    _LOG_W("run_program already active; ignoring duplicate START %s", program_name ? program_name : "NULL");
+    _LOG_W("run_program already active; ignoring duplicate START");
     return false;
   }
-  if (program_name && program_name[0]) {
-      setCharArray(ActiveStatus.Program, program_name);
-  }
+  if (program_name && program_name[0]) assign_program(program_name);
   if (xTaskCreate(run_program, "run_program", RUN_PROGRAM_STACK, NULL, ACTION_TASK_PRIO, &s_program_task) != pdPASS) {
     _LOG_E("failed to create run_program task");
     s_program_task = NULL;
@@ -267,8 +260,7 @@ static void perform_action(actions_t a) {
       break;
     case ACTION_CANCEL:
       _LOG_I("Performing CANCEL");
-      // Prefer a cooperative cancel flag in your program loop.
-      // e.g., set a global "CancelRequested" that run_program checks.
+      // Implement a cooperative cancel flag inside your program loop if desired.
       break;
     case ACTION_UPDATE:
       _LOG_I("Performing UPDATE (OTA)");
@@ -285,18 +277,6 @@ static void perform_action(actions_t a) {
   }
 }
 
-static void action_worker(void *arg) {
-  (void)arg;
-  for (;;) {
-    actions_t a;
-    if (xQueueReceive(s_action_queue, &a, portMAX_DELAY) == pdTRUE) {
-      mirror_pop_front();
-      log_queue_snapshot();
-      perform_action(a);
-    }
-  }
-}
-
 static esp_err_t handle_action_common(httpd_req_t *req, actions_t a) {
   drain_body(req);
   if (!s_action_queue) {
@@ -310,10 +290,19 @@ static esp_err_t handle_action_common(httpd_req_t *req, actions_t a) {
     httpd_resp_sendstr(req, "queue full\n");
     return ESP_OK;
   }
-  mirror_push(a);
   httpd_resp_set_type(req, "text/plain");
   httpd_resp_sendstr(req, "OK\n");
   return ESP_OK;
+}
+
+static void action_worker(void *arg) {
+  (void)arg;
+  for (;;) {
+    actions_t a;
+    if (xQueueReceive(s_action_queue, &a, portMAX_DELAY) == pdTRUE) {
+      perform_action(a);
+    }
+  }
 }
 
 static esp_err_t handle_start  (httpd_req_t *req){ return handle_action_common(req, ACTION_START);  }
@@ -322,7 +311,7 @@ static esp_err_t handle_hitemp (httpd_req_t *req){ return handle_action_common(r
 static esp_err_t handle_update (httpd_req_t *req){ return handle_action_common(req, ACTION_UPDATE); }
 static esp_err_t handle_reboot (httpd_req_t *req){ return handle_action_common(req, ACTION_REBOOT); }
 
-// ---- Server lifecycle & routing (POST-only) ----
+// ===== Server lifecycle & routing (POST-only) =====
 static void register_uri_post(httpd_handle_t s, const char *uri, esp_err_t (*handler)(httpd_req_t*)) {
   httpd_uri_t u = {
     .uri = uri,
@@ -380,7 +369,7 @@ void start_webserver(void) {
 void stop_webserver(void) {
   if (s_server) {
     httpd_stop(s_server);
-    s_server = NULL;
-    _LOG_I("webserver stopped");
   }
+  s_server = NULL;
+  _LOG_I("webserver stopped");
 }
