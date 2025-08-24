@@ -264,7 +264,7 @@ static Program_Entry Programs[NUM_PROGRAMS] = {
     {"Normal", NormalProgramLines,
      sizeof(NormalProgramLines) / sizeof(NormalProgramLines[0]),0},
     {"HiTemp", HiTempProgramLines,
-     sizeof(HiTempProgramLines) / sizeof(HiTempProgramLines[0]),0};
+     sizeof(HiTempProgramLines) / sizeof(HiTempProgramLines[0]),0},
       {"Cancel", CancelProgramLines,
      sizeof(CancelProgramLines) / sizeof(CancelProgramLines[0]),0};
 #define setCharArray(target, value)                                            \
