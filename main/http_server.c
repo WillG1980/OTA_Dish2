@@ -28,6 +28,12 @@
 #define ACTION_TASK_PRIO   5
 #define RUN_PROGRAM_STACK  8192
 
+static void        action_worker(void *arg);
+static esp_err_t   generic_action_handler(httpd_req_t *req);
+static esp_err_t   root_get_handler(httpd_req_t *req);
+static esp_err_t   handle_status(httpd_req_t *req);
+
+
 static httpd_handle_t s_server       = NULL;
 static QueueHandle_t  s_action_queue = NULL;
 static TaskHandle_t   s_action_task  = NULL;
