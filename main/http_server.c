@@ -1,13 +1,9 @@
-// POST-only HTTP server with /action/* endpoints and a rich /status
-// response sourced from ActiveStatus (dishwasher_programs.*).
-//
-// Drop-in replacement: if you already expose these endpoints, this file
-// keeps them and only changes the /status payload/logic.
-//
-// Requires: ESP-IDF (esp_http_server), your existing _LOG_* macros,
-// and the ActiveStatus struct from dishwasher_programs.h.
-//
-// Copyright ...
+// POST-only HTTP server with /action/* endpoints and a rich /status payload.
+// - Uses enum { ..., ACTION_MAX } style.
+// - Idempotent start_webserver() that does its own init (queue + worker).
+// - Only one run_program task may be active at a time.
+// - /status returns Program, name_cycle, name_step, CurrentTemp, start time,
+//   ETA, remaining, active device list, and a sticky soap indicator.
 
 #include "esp_http_server.h"
 #include "esp_timer.h"
@@ -21,8 +17,8 @@
 #include <stdio.h>
 
 #include "http_server.h"
-#include "dishwasher_programs.h"   // for status_struct ActiveStatus, run_program(), etc.
-#include "local_ota.h"             // for check_and_perform_ota()
+#include "dishwasher_programs.h"   // status_struct ActiveStatus, run_program(), etc.
+#include "local_ota.h"             // check_and_perform_ota()
 
 // ---- Logging ----
 #ifndef TAG
@@ -33,20 +29,33 @@
 #define ACTION_QUEUE_LEN   16
 #define ACTION_TASK_STACK  4096
 #define ACTION_TASK_PRIO   5
+#define RUN_PROGRAM_STACK  8192
 
-// ---- Externals you already have in your project ----
+// ---- Externals present in your project ----
+extern status_struct ActiveStatus;
+extern void run_program(void *);                 // your program engine task
+extern void setCharArray(char *dst, const char *src); // optional helper (safe strncpy)
 
-// run_program task entry (provided by your program engine)
+// ---- Devices enum (for names list; keep *_MAX last) ----
+typedef enum {
+  DEVICE_HEAT = 0,
+  DEVICE_SPRAY,
+  DEVICE_FILL,
+  DEVICE_DRAIN,
+  DEVICE_SOAP,
+  DEVICE_MAX
+} device_t;
 
-// Optional helper you may already have; if not, we set Program via strncpy.
+static const char *DEVICE_NAMES[DEVICE_MAX] = {
+  "Heat","Spray","Fill","Drain","Soap"
+};
 
 // ---- Module state ----
 static httpd_handle_t s_server       = NULL;
 static QueueHandle_t  s_action_queue = NULL;
 static TaskHandle_t   s_action_task  = NULL;
-static TaskHandle_t   s_program_task = NULL;  // single-run guard for run_program
+static TaskHandle_t   s_program_task = NULL;  // single-run guard
 
-// For logging a readable snapshot of queued actions
 typedef struct {
   actions_t action;
   int64_t   enqueued_ms;
@@ -55,6 +64,10 @@ typedef struct {
 static action_item_t s_qmirror[ACTION_QUEUE_LEN];
 static size_t s_q_head = 0;
 static size_t s_q_size = 0;
+
+// Sticky soap indicator for the current program
+static bool    s_soap_dispensed_sticky = false;
+static int64_t s_last_program_start_ms = -1;
 
 // ---- Utilities ----
 static inline int64_t now_ms(void) { return esp_timer_get_time() / 1000; }
@@ -109,7 +122,6 @@ static void log_queue_snapshot(void) {
   _LOG_D("queue snapshot: %s", buf[0] ? buf : "(overflow)");
 }
 
-// ---- POST body drain (tidy up even if unused) ----
 static void drain_body(httpd_req_t *req) {
   int remaining = req->content_len;
   while (remaining > 0) {
@@ -120,41 +132,6 @@ static void drain_body(httpd_req_t *req) {
   }
 }
 
-// ===================================================
-// /status  (UPDATED)
-// ===================================================
-//
-// Returns JSON with:
-// Program, name_cycle, name_step, CurrentTemp,
-// start_time_epoch_ms, eta_finish_epoch_ms, remaining_ms,
-// active_devices [Heat,Spray,Fill,Drain,Soap],
-// soap_has_dispensed (sticky true for current program).
-//
-// ActiveStatus reference (from user):
-// typedef struct {
-//   int CurrentTemp;
-//   int CurrentPower;
-//   int64_t time_full_start;
-//   int64_t time_full_total;
-//   int64_t time_cycle_start;
-//   int64_t time_cycle_total;
-//   int64_t time_total;
-//   int64_t time_elapsed;
-//   int64_t time_start;
-//   char Cycle[10];
-//   char Step[10];
-//   char statusstring[512];
-//   char IPAddress[16];
-//   char FirmwareStatus[20];
-//   char Program[10];
-//   bool HEAT_REQUESTED;
-//   char ActiveDevices[10];
-//   Program_Entry Active_Program;
-// } status_struct;
-
-static bool   s_soap_dispensed_sticky = false;
-static int64_t s_last_program_start_ms = -1;
-
 static bool has_token_ci(const char *s, const char *token) {
   if (!s || !token) return false;
   size_t n = strlen(token);
@@ -164,36 +141,35 @@ static bool has_token_ci(const char *s, const char *token) {
   return false;
 }
 
-static void parse_active_devices(const char *src,
-                                 bool *heat, bool *spray, bool *fill, bool *drain, bool *soap)
-{
-  *heat = *spray = *fill = *drain = *soap = false;
+// Parse ActiveStatus.ActiveDevices into boolean flags.
+// Accepts either words ("heat", "spray", ...) or letter codes H,S,F,D,P.
+static void parse_active_devices(const char *src, bool on[DEVICE_MAX]) {
+  for (int i = 0; i < DEVICE_MAX; i++) on[i] = false;
   if (!src) return;
 
-  // Named matches (case-insensitive)
-  if (has_token_ci(src, "heat"))  *heat  = true;
-  if (has_token_ci(src, "spray")) *spray = true;
-  if (has_token_ci(src, "fill"))  *fill  = true;
-  if (has_token_ci(src, "drain")) *drain = true;
-  if (has_token_ci(src, "soap"))  *soap  = true;
+  if (has_token_ci(src, "heat"))  on[DEVICE_HEAT]  = true;
+  if (has_token_ci(src, "spray")) on[DEVICE_SPRAY] = true;
+  if (has_token_ci(src, "fill"))  on[DEVICE_FILL]  = true;
+  if (has_token_ci(src, "drain")) on[DEVICE_DRAIN] = true;
+  if (has_token_ci(src, "soap"))  on[DEVICE_SOAP]  = true;
 
-  // Letter flag fallback (H,S,F,D,P)
   for (const char *p = src; *p; ++p) {
     switch (*p) {
-      case 'H': case 'h': *heat  = true; break;
-      case 'S': case 's': *spray = true; break;
-      case 'F': case 'f': *fill  = true; break;
-      case 'D': case 'd': *drain = true; break;
-      case 'P': case 'p': *soap  = true; break;
+      case 'H': case 'h': on[DEVICE_HEAT]  = true; break;
+      case 'S': case 's': on[DEVICE_SPRAY] = true; break;
+      case 'F': case 'f': on[DEVICE_FILL]  = true; break;
+      case 'D': case 'd': on[DEVICE_DRAIN] = true; break;
+      case 'P': case 'p': on[DEVICE_SOAP]  = true; break;
       default: break;
     }
   }
 }
 
+// ---- /status (POST-only) ----
 static esp_err_t handle_status(httpd_req_t *req) {
   drain_body(req);
 
-  // Choose program start & total; prefer "full" values when present
+  // Prefer "full" timing when present
   int64_t start_ms = (ActiveStatus.time_full_start > 0)
                       ? ActiveStatus.time_full_start
                       : ActiveStatus.time_start;
@@ -202,15 +178,14 @@ static esp_err_t handle_status(httpd_req_t *req) {
                       ? ActiveStatus.time_full_total
                       : ActiveStatus.time_total;
 
-  // Reset sticky soap if program start changed
+  // Reset sticky soap on new program start
   if (start_ms > 0 && start_ms != s_last_program_start_ms) {
     s_last_program_start_ms = start_ms;
     s_soap_dispensed_sticky = false;
   }
 
   // Remaining time:
-  // Prefer: time_total - time_elapsed (if populated)
-  // Else:   (start + total) - now
+  // Prefer explicit fields; else derive from start+total-now.
   int64_t remaining_ms = -1;
   if (ActiveStatus.time_total > 0 && ActiveStatus.time_elapsed >= 0) {
     remaining_ms = ActiveStatus.time_total - ActiveStatus.time_elapsed;
@@ -227,16 +202,15 @@ static esp_err_t handle_status(httpd_req_t *req) {
     eta_ms = now_ms() + remaining_ms;
   }
 
-  // Active devices → list
-  bool heat=false, spray=false, fill=false, drain=false, soap=false;
-  parse_active_devices(ActiveStatus.ActiveDevices, &heat, &spray, &fill, &drain, &soap);
+  bool on[DEVICE_MAX];
+  parse_active_devices(ActiveStatus.ActiveDevices, on);
 
   // Make soap sticky for the current program if observed active or step == "Soap"
-  if (soap || has_token_ci(ActiveStatus.Step, "soap")) {
+  if (on[DEVICE_SOAP] || has_token_ci(ActiveStatus.Step, "soap")) {
     s_soap_dispensed_sticky = true;
   }
 
-  // Build JSON
+  // JSON
   char json[1024];
   size_t pos = 0;
   #define APPEND(fmt, ...) do { \
@@ -255,11 +229,12 @@ static esp_err_t handle_status(httpd_req_t *req) {
   APPEND("\"remaining_ms\":%lld,",        (long long)(remaining_ms >= 0 ? remaining_ms : -1));
   APPEND("\"active_devices\":[");
     bool first = true;
-    if (heat)  { APPEND("%s\"Heat\"",  first ? "" : ","); first = false; }
-    if (spray) { APPEND("%s\"Spray\"", first ? "" : ","); first = false; }
-    if (fill)  { APPEND("%s\"Fill\"",  first ? "" : ","); first = false; }
-    if (drain) { APPEND("%s\"Drain\"", first ? "" : ","); first = false; }
-    if (soap)  { APPEND("%s\"Soap\"",  first ? "" : ","); first = false; }
+    for (int d = 0; d < DEVICE_MAX; d++) {
+      if (on[d]) {
+        APPEND("%s\"%s\"", first ? "" : ",", DEVICE_NAMES[d]);
+        first = false;
+      }
+    }
   APPEND("],");
   APPEND("\"soap_has_dispensed\":%s", s_soap_dispensed_sticky ? "true" : "false");
   APPEND("}\n");
@@ -268,10 +243,7 @@ static esp_err_t handle_status(httpd_req_t *req) {
   return ESP_OK;
 }
 
-// ===================================================
-// Action worker (unchanged semantics; POST-only handlers)
-// ===================================================
-
+// ---- Action worker & handlers (POST-only) ----
 static bool start_program_if_idle(const char *program_name) {
   if (s_program_task && eTaskGetState(s_program_task) != eDeleted) {
     _LOG_W("run_program already active; ignoring duplicate START");
@@ -285,7 +257,7 @@ static bool start_program_if_idle(const char *program_name) {
       ActiveStatus.Program[sizeof(ActiveStatus.Program)-1] = '\0';
     }
   }
-  if (xTaskCreate(run_program, "run_program", 8192, NULL, ACTION_TASK_PRIO, &s_program_task) != pdPASS) {
+  if (xTaskCreate(run_program, "run_program", RUN_PROGRAM_STACK, NULL, ACTION_TASK_PRIO, &s_program_task) != pdPASS) {
     _LOG_E("failed to create run_program task");
     s_program_task = NULL;
     return false;
@@ -306,7 +278,7 @@ static void perform_action(actions_t a) {
     case ACTION_CANCEL:
       _LOG_I("Performing CANCEL");
       // Prefer a cooperative cancel flag in your program loop.
-      // Example: ActiveStatus.HEAT_REQUESTED = false;  // or set a Cancel flag you maintain
+      // e.g., set a global "CancelRequested" that run_program checks.
       break;
     case ACTION_UPDATE:
       _LOG_I("Performing UPDATE (OTA)");
@@ -360,14 +332,11 @@ static esp_err_t handle_hitemp (httpd_req_t *req){ return handle_action_common(r
 static esp_err_t handle_update (httpd_req_t *req){ return handle_action_common(req, ACTION_UPDATE); }
 static esp_err_t handle_reboot (httpd_req_t *req){ return handle_action_common(req, ACTION_REBOOT); }
 
-// ===================================================
-// Server lifecycle & routing (POST-only)
-// ===================================================
-
-static void register_uri(httpd_handle_t s, const char *uri, esp_err_t (*handler)(httpd_req_t*)) {
+// ---- Server lifecycle & routing (POST-only) ----
+static void register_uri_post(httpd_handle_t s, const char *uri, esp_err_t (*handler)(httpd_req_t*)) {
   httpd_uri_t u = {
     .uri = uri,
-    .method = HTTP_POST,   // POST-only as requested
+    .method = HTTP_POST,
     .handler = handler,
     .user_ctx = NULL
   };
@@ -388,7 +357,6 @@ void start_webserver(void) {
       return;
     }
   }
-
   if (!s_action_task) {
     if (xTaskCreate(action_worker, "action_worker", ACTION_TASK_STACK, NULL, ACTION_TASK_PRIO, &s_action_task) != pdPASS) {
       _LOG_E("failed to create action_worker");
@@ -406,14 +374,14 @@ void start_webserver(void) {
   }
 
   // Control endpoints (POST-only)
-  register_uri(s_server, "/action/start",  handle_start);
-  register_uri(s_server, "/action/cancel", handle_cancel);
-  register_uri(s_server, "/action/hitemp", handle_hitemp);
-  register_uri(s_server, "/action/update", handle_update);
-  register_uri(s_server, "/action/reboot", handle_reboot);
+  register_uri_post(s_server, "/action/start",  handle_start);
+  register_uri_post(s_server, "/action/cancel", handle_cancel);
+  register_uri_post(s_server, "/action/hitemp", handle_hitemp);
+  register_uri_post(s_server, "/action/update", handle_update);
+  register_uri_post(s_server, "/action/reboot", handle_reboot);
 
-  // Status endpoint (POST-only) — UPDATED
-  register_uri(s_server, "/status", handle_status);
+  // Status endpoint (POST-only)
+  register_uri_post(s_server, "/status", handle_status);
 
   started = true;
   _LOG_I("webserver started");
