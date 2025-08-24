@@ -173,3 +173,54 @@ static esp_err_t handle_status(httpd_req_t *req) {
     httpd_resp_send_chunk(req, NULL, 0);
     return ESP_OK;
 }
+void start_webserver(void) {
+    if (s_server) { return; }
+
+    // Ensure the action queue/worker exist before starting HTTPD
+    if (!s_action_queue) {
+        s_action_queue = xQueueCreate(ACTION_QUEUE_LEN, sizeof(actions_t));
+        if (!s_action_queue) { _LOG_E("failed to create action queue"); return; }
+    }
+    if (!s_action_task) {
+        if (xTaskCreate(action_worker, "action_worker",
+                        ACTION_TASK_STACK, NULL, ACTION_TASK_PRIO,
+                        &s_action_task) != pdPASS) {
+            _LOG_E("failed to create action_worker");
+            return;
+        }
+    }
+
+    httpd_config_t config = HTTPD_DEFAULT_CONFIG();
+    config.uri_match_fn = httpd_uri_match_wildcard;  // required for "/action/*"
+
+    if (httpd_start(&s_server, &config) != ESP_OK) {
+        _LOG_E("httpd_start failed");
+        s_server = NULL;
+        return;
+    }
+
+    // /status (GET + POST)
+    httpd_uri_t status_get  = { .uri="/status", .method=HTTP_GET , .handler=handle_status, .user_ctx=NULL };
+    httpd_uri_t status_post = { .uri="/status", .method=HTTP_POST, .handler=handle_status, .user_ctx=NULL };
+    httpd_register_uri_handler(s_server, &status_get);
+    httpd_register_uri_handler(s_server, &status_post);
+
+    // Single wildcard route for all actions: /action/* (POST)
+    httpd_uri_t action_post = { .uri="/action/*", .method=HTTP_POST, .handler=generic_action_handler, .user_ctx=NULL };
+    httpd_register_uri_handler(s_server, &action_post);
+
+    // Root UI
+    httpd_uri_t root_get = { .uri="/", .method=HTTP_GET, .handler=root_get_handler, .user_ctx=NULL };
+    httpd_register_uri_handler(s_server, &root_get);
+
+    _LOG_I("webserver started");
+}
+
+void stop_webserver(void) {
+    if (s_server) { httpd_stop(s_server); }
+    s_server = NULL;
+}
+
+bool http_server_is_running(void) {
+    return s_server != NULL;
+}
