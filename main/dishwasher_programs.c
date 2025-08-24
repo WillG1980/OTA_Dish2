@@ -100,7 +100,7 @@ void run_program(void *pvParameters) {
 
   _LOG_I("Program selected: %s", ActiveStatus.Program);
   gpio_mask_config_outputs(ALL_ACTORS);
-  char *old_cycle = "";
+  char old_cycle[6] = "\n";
 
   if (!verify_program()) {
     setCharArray(ActiveStatus.Program, "INVALID");
