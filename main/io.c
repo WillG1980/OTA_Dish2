@@ -16,7 +16,7 @@
 #define LED_STATUS_CLEAN     GPIO_NUM_13
 #define LED_CONTROL_LOCK     GPIO_NUM_14
 
-static inline void led_set(gpio_num_t pin, bool on) {
+static inline void io_led_set(gpio_num_t pin, bool on) {
   gpio_set_level(pin, on ? 1 : 0);
 }
 
