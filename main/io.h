@@ -8,6 +8,7 @@
 // Reserved elsewhere: Relays=33,32,25,26,27  |  ADC=34
 
 #include <stdbool.h>
+#include <stdint.h>         // for uint32_t
 #include "esp_err.h"
 #include "driver/gpio.h"
 
@@ -50,7 +51,6 @@ typedef enum {
   IO_SW_COUNT
 } io_switch_t;
 
-void io_led_set(io_led_t led, bool on);
 // ---- Public API ----
 
 /**
@@ -61,11 +61,14 @@ void io_led_set(io_led_t led, bool on);
 esp_err_t io_init_onepin(void);
 
 /** @brief Set LED state (true=ON). */
-//void io_led_set(io_led_t led, bool on);
+void io_led_set(io_led_t led, bool on);
 
 /** @brief Toggle an LED. */
 void io_led_toggle(io_led_t led);
+
+/** @brief One-shot test: turns each LED ON for 5s, then OFF. */
 void io_test_all_leds_once(void);
+
 /** @brief Convenience helpers. */
 static inline void io_led_on (io_led_t led) { io_led_set(led, true);  }
 static inline void io_led_off(io_led_t led) { io_led_set(led, false); }
