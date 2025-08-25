@@ -1,6 +1,7 @@
 #include "driver/gpio.h"
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
+#include "dishwasher_programs.h"
 
 // ----- Switch pins (active-low) -----
 #define SW_START        GPIO_NUM_16
