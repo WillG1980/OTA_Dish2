@@ -3,6 +3,11 @@
 #include "freertos/task.h"
 #include "dishwasher_programs.h"
 
+#include <string.h>
+#include <strings.h> // strcasecmp
+#include "io.h"
+
+
 // ----- Switch pins (active-low) -----
 #define SW_START        GPIO_NUM_16
 #define SW_CANCEL       GPIO_NUM_17
@@ -24,11 +29,6 @@ static inline bool sw_pressed(gpio_num_t pin) {
   // Active-low: pressed when level == 0
   return gpio_get_level(pin) == 0;
 }
-
-#include <string.h>
-#include <strings.h> // strcasecmp
-#include "io.h"
-
 // --- name -> enum map (Preset C names) ---
 static const struct { const char *name; io_led_t id; } s_led_name_map[] = {
   {"status_washing", IO_LED_STATUS_WASHING},

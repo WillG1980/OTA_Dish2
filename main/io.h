@@ -60,7 +60,7 @@ typedef enum {
 esp_err_t io_init_onepin(void);
 
 /** @brief Set LED state (true=ON). */
-void io_led_set(io_led_t led, bool on);
+//void io_led_set(io_led_t led, bool on);
 
 /** @brief Toggle an LED. */
 void io_led_toggle(io_led_t led);
