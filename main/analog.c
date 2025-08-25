@@ -284,7 +284,7 @@ static void temp_sampler_task(void *arg) {
         ActiveStatus.CurrentTemp= (int)(temp_f + 0.5f); // round to nearest int
 
         _LOG_I("update_current_temp_from_adc(): mv_mean=%d → Temp=%d°F",
-               mv_mean, ActiveStatus.currenttemp);
+               st.mv_mean, ActiveStatus.CurrentTemp);
       }
 
       // pacing to maintain collection cadence
