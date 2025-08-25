@@ -24,6 +24,119 @@ static inline bool sw_pressed(gpio_num_t pin) {
   return gpio_get_level(pin) == 0;
 }
 
+#include <string.h>
+#include <strings.h> // strcasecmp
+#include "io.h"
+
+// --- name -> enum map (Preset C names) ---
+static const struct { const char *name; io_led_t id; } s_led_name_map[] = {
+  {"status_washing", IO_LED_STATUS_WASHING},
+  {"status_sensing", IO_LED_STATUS_SENSING},
+  {"status_drying",  IO_LED_STATUS_DRYING},
+  {"status_clean",   IO_LED_STATUS_CLEAN},
+  {"control_lock",   IO_LED_CONTROL_LOCK},
+};
+
+static bool name_to_led(const char *name, io_led_t *out) {
+  if (!name || !out) return false;
+  for (size_t i = 0; i < sizeof(s_led_name_map)/sizeof(s_led_name_map[0]); ++i) {
+    if (strcasecmp(name, s_led_name_map[i].name) == 0) {
+      *out = s_led_name_map[i].id;
+      return true;
+    }
+  }
+  return false;
+}
+
+// --- per-LED blink control ---
+typedef struct {
+  io_led_t   led;
+  uint32_t   on_ms;
+  uint32_t   off_ms;
+  int        count;     // 0 = infinite
+} blink_args_t;
+
+static TaskHandle_t s_blink_task[IO_LED_COUNT] = {0};
+static volatile bool s_blink_stop[IO_LED_COUNT] = {0};
+
+static void blink_task(void *pv) {
+  blink_args_t a = *(blink_args_t *)pv;
+  free(pv); // allocated in LED_Blink
+  const TickType_t on_ticks  = pdMS_TO_TICKS(a.on_ms  ? a.on_ms  : 1);
+  const TickType_t off_ticks = pdMS_TO_TICKS(a.off_ms ? a.off_ms : 1);
+
+  _LOG_D("LED_Blink start: led=%d on=%ums off=%ums count=%d", (int)a.led, (unsigned)a.on_ms, (unsigned)a.off_ms, a.count);
+
+  int remaining = a.count;
+  while (!s_blink_stop[a.led] && (remaining != 0)) {
+    // ON
+    io_led_set(a.led, true);
+    vTaskDelay(on_ticks);
+    if (s_blink_stop[a.led]) break;
+    // OFF
+    io_led_set(a.led, false);
+    vTaskDelay(off_ticks);
+    if (remaining > 0) remaining--;
+  }
+
+  // Ensure LED ends OFF when finished/cancelled
+  io_led_set(a.led, false);
+
+  _LOG_D("LED_Blink end: led=%d", (int)a.led);
+  s_blink_task[a.led] = NULL;
+  s_blink_stop[a.led] = false;
+  vTaskDelete(NULL);
+}
+
+esp_err_t LED_Blink(const char *name, uint32_t time_on_ms, uint32_t time_off_ms, int count) {
+  io_led_t led;
+  if (!name_to_led(name, &led)) {
+    _LOG_E("LED_Blink: unknown LED name '%s'", name ? name : "(null)");
+    return ESP_ERR_INVALID_ARG;
+  }
+  if (time_on_ms == 0 && time_off_ms == 0) {
+    _LOG_E("LED_Blink: both times are 0");
+    return ESP_ERR_INVALID_ARG;
+  }
+
+  // Cancel existing blinker on this LED, if any
+  if (s_blink_task[led]) {
+    s_blink_stop[led] = true;
+    // Give it a moment to clean up
+    for (int i = 0; i < 50 && s_blink_task[led]; ++i) vTaskDelay(pdMS_TO_TICKS(2)); // up to ~100ms
+  }
+
+  // Prepare args
+  blink_args_t *args = (blink_args_t *)malloc(sizeof(blink_args_t));
+  if (!args) return ESP_ERR_NO_MEM;
+  args->led    = led;
+  args->on_ms  = (time_on_ms  == 0) ? 1 : time_on_ms;
+  args->off_ms = (time_off_ms == 0) ? 1 : time_off_ms;
+  args->count  = count; // 0 == infinite
+
+  s_blink_stop[led] = false;
+  BaseType_t ok = xTaskCreate(blink_task, "led_blink", 2048, args, 5, &s_blink_task[led]);
+  if (ok != pdPASS) {
+    free(args);
+    s_blink_task[led] = NULL;
+    _LOG_E("LED_Blink: failed to create task");
+    return ESP_FAIL;
+  }
+  return ESP_OK;
+}
+void LED_Blink_Cancel(const char *name) {
+  io_led_t led;
+  if (!name_to_led(name, &led)) {
+    _LOG_E("LED_Blink_Cancel: unknown LED name '%s'", name ? name : "(null)");
+    return;
+  }
+  if (s_blink_task[led]) {
+    s_blink_stop[led] = true;
+    // Give it a moment to clean up
+    for (int i = 0; i < 50 && s_blink_task[led]; ++i) vTaskDelay(pdMS_TO_TICKS(2)); // up to ~100ms
+  }
+}
+
 esp_err_t ui_pins_init(void) {
   // LEDs as outputs, start OFF
   const gpio_config_t led_cfg = {
@@ -77,4 +190,5 @@ void ui_poll_task(void *arg) {
 
     vTaskDelay(dt);
   }
+
 }
