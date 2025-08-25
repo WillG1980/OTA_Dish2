@@ -5,8 +5,7 @@
 // - Switches (active-low): Start, Cancel, Delay, Quick Rinse
 // - LEDs (active-high): status_washing, status_sensing, status_drying, status_clean, control_lock
 //
-// Relays in use elsewhere: 33, 32, 25, 26, 27
-// ADC in use elsewhere:    34
+// Reserved elsewhere: Relays=33,32,25,26,27  |  ADC=34
 
 #include <stdbool.h>
 #include "esp_err.h"
@@ -33,7 +32,7 @@ extern "C" {
 #define IO_PIN_LED_STATUS_CLEAN    GPIO_NUM_13
 #define IO_PIN_LED_CONTROL_LOCK    GPIO_NUM_14
 
-// ---- Logical identifiers (stable across code) ----
+// ---- Logical identifiers ----
 typedef enum {
   IO_LED_STATUS_WASHING = 0,
   IO_LED_STATUS_SENSING,
@@ -60,31 +59,31 @@ typedef enum {
  */
 esp_err_t io_init_onepin(void);
 
-/**
- * @brief Set LED state (true = ON, false = OFF).
- */
+/** @brief Set LED state (true=ON). */
 void io_led_set(io_led_t led, bool on);
 
-/**
- * @brief Convenience helpers.
- */
+/** @brief Toggle an LED. */
+void io_led_toggle(io_led_t led);
+
+/** @brief Convenience helpers. */
 static inline void io_led_on (io_led_t led) { io_led_set(led, true);  }
 static inline void io_led_off(io_led_t led) { io_led_set(led, false); }
 
 /**
- * @brief Toggle an LED.
- */
-void io_led_toggle(io_led_t led);
-
-/**
- * @brief Read a switch level (active-low): returns true when pressed.
- *        Debounce is the caller's responsibility (or use your poll task).
+ * @brief Read a switch level (active-low). Returns true when pressed.
+ *        (Debounce is the caller's responsibility if needed.)
  */
 bool io_switch_pressed(io_switch_t sw);
 
-// (Optional) Simple poller you can start if you want edge logs/debounce internally.
-// Provide in io.c if desired, or omit.
-// void io_start_poll_task(UBaseType_t prio, uint32_t stack_bytes);
+/**
+ * @brief Blink an LED by string name (case-insensitive).
+ * @param name        One of: "status_washing","status_sensing","status_drying","status_clean","control_lock"
+ * @param time_on_ms  ON duration in milliseconds (>=1)
+ * @param time_off_ms OFF duration in milliseconds (>=1)
+ * @param count       Number of ON pulses; 0 = blink forever (until another call for the same LED)
+ * @return ESP_OK on success, ESP_ERR_INVALID_ARG if name unknown/invalid.
+ */
+esp_err_t LED_Blink(const char *name, uint32_t time_on_ms, uint32_t time_off_ms, int count);
 
 #ifdef __cplusplus
 } // extern "C"
