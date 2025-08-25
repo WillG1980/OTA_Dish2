@@ -50,13 +50,12 @@ void prepare_programs(void) {
   bool found = false;
   long long step_min_time = 0;
   long long step_max_time = 0;
-int cycle=1;
-char last_cycle[10]="";
-
+  int cycle = 1;
+  char last_cycle[10] = "";
 
   for (int i = 0; i < NUM_PROGRAMS; i++) {
-  long long min_time = 0;
-  long long max_time = 0;
+    long long min_time = 0;
+    long long max_time = 0;
     current = Programs[i];
     // compute min/max times and print steps
     for (size_t l = 0; l < current.num_lines; l++) {
@@ -66,29 +65,28 @@ char last_cycle[10]="";
         strcpy(last_cycle, current.lines[l].name_cycle);
       }
       ProgramLineStruct *Line = &current.lines[l];
-      
+
       step_min_time = (long long)Line->min_time;
-      min_time+=step_min_time;
+      min_time += step_min_time;
 
-      step_max_time =(long long)((Line->max_time > 1 ) ? Line->max_time : Line->min_time);
-      max_time+=step_max_time;
+      step_max_time =
+          (long long)((Line->max_time > 1) ? Line->max_time : Line->min_time);
+      max_time += step_max_time;
 
-       _LOG_I("%6s->%6s->%6s\t = Min TTR:%lld\tMax TTR: %lld\tMin Temp:%3d \tMax Temp:%3d \tGPIO:%" PRIu64,
-             SAFE_STR(Programs[i].name),
-             SAFE_STR(Line->name_cycle),
-             SAFE_STR(Line->name_step), 
+      _LOG_I("%6s->%6s->%6s\t = Min TTR:%lld\tMax TTR: %lld\tMin Temp:%3d "
+             "\tMax Temp:%3d \tGPIO:%" PRIu64,
+             SAFE_STR(Programs[i].name), SAFE_STR(Line->name_cycle),
+             SAFE_STR(Line->name_step),
 
-             (long long)step_min_time,
-             (long long)step_max_time, 
+             (long long)step_min_time, (long long)step_max_time,
 
-             (int)Line->min_temp,
-             (int)Line->max_temp, 
-             (uint64_t)Line->gpio_mask);          
+             (int)Line->min_temp, (int)Line->max_temp,
+             (uint64_t)Line->gpio_mask);
     }
 
     Programs[i].min_time = min_time;
     Programs[i].max_time = max_time;
-    Programs[i].num_cycles=cycle;
+    Programs[i].num_cycles = cycle;
     printf("\nTotal run time for program '%s': Min: %lld Minutes, Max: %lld "
            "Minutes\n",
            current.name, (long long)min_time / MIN, (long long)max_time / MIN);
@@ -111,25 +109,28 @@ void run_program(void *pvParameters) {
 
   int64_t cycle_run_time = 0;
   ActiveStatus.time_full_start = get_unix_epoch();
-  ActiveStatus.time_full_total = get_unix_epoch() + ActiveStatus.Active_Program.max_time;
-  ActiveStatus.CyclesTotal=ActiveStatus.Active_Program.num_cycles;
-  ActiveStatus.StepsTotal=ActiveStatus.Active_Program.num_lines;
+  ActiveStatus.time_full_total =
+      get_unix_epoch() + ActiveStatus.Active_Program.max_time;
+  ActiveStatus.CyclesTotal = ActiveStatus.Active_Program.num_cycles;
+  ActiveStatus.StepsTotal = ActiveStatus.Active_Program.num_lines;
 
   for (size_t l = 0; l < ActiveStatus.Active_Program.num_lines; l++) {
-    ActiveStatus.StepIndex=l+1;
+    ActiveStatus.StepIndex = l + 1;
 
     ProgramLineStruct *Line = &ActiveStatus.Active_Program.lines[l];
 
-    if(strcmp(Line->name_cycle, old_cycle)!=0) {
+    if (strcmp(Line->name_cycle, old_cycle) != 0) {
       // new cycle
       ActiveStatus.CycleIndex++;
       ActiveStatus.time_cycle_start = get_unix_epoch();
-      ActiveStatus.time_cycle_total = get_unix_epoch() + Line->min_time; // rough estimate
+      ActiveStatus.time_cycle_total =
+          get_unix_epoch() + Line->min_time; // rough estimate
       setCharArray(old_cycle, Line->name_cycle);
     }
     gpio_mask_clear(HEAT | SPRAY | INLET | DRAIN | SOAP); // set all pins to off
 
-    int TTR = (Line->max_time > Line->min_time) ? Line->max_time : Line->min_time;
+    int TTR =
+        (Line->max_time > Line->min_time) ? Line->max_time : Line->min_time;
     time_t target_time = get_unix_epoch() + TTR;
 
     COPY_STRING(ActiveStatus.Cycle, Line->name_cycle);
@@ -139,17 +140,31 @@ void run_program(void *pvParameters) {
            ActiveStatus.Program, Line->name_cycle, Line->name_step, TTR,
            return_masked_bits(Line->gpio_mask,
                               HEAT | SPRAY | INLET | DRAIN | SOAP));
-
-
-    gpio_mask_set(Line->gpio_mask);     // set all pins to off
+    uint64_t gpio_mask = Line->gpio_mask;
+    gpio_mask = gpio_mask & ALL_ACTORS; // only allow valid actors
+    ActiveStatus.HEAT_REQUESTED = (gpio_mask & HEAT) ? true : false;
+    gpio_mask &= ~HEAT; //remove HEAT, handle differently
+    gpio_mask_set(gpio_mask);           // set all pins to off
     vTaskDelay(pdMS_TO_TICKS(5 * SEC)); // run for 5 seconds minimum
 
     for (; TTR > 0; TTR -= 5) {
-      if(ActiveStatus.SkipStep) {
-        ActiveStatus.SkipStep=false;
+      if (ActiveStatus.SkipStep) {
+        ActiveStatus.SkipStep = false;
         _LOG_W("Skipping step as requested");
         break;
-      } 
+      }
+      if (ActiveStatus.HEAT_REQUESTED) {
+        if (ActiveStatus.CurrentTemp < Line->max_temp) {
+          _LOG_I("Turning HEAT ON: Current/Target Temp: %d / %d ", ActiveStatus.CurrentTemp,Line->max_temp);
+          gpio_mask_set(HEAT);
+        } else {
+          _LOG_I("Leaving HEAT OFF");
+          gpio_mask_clear(HEAT);
+        }
+      } else {
+        gpio_mask_clear(HEAT);
+      }
+
       gpio_mask_set(
           Line->gpio_mask); // set all pins to on every 5 seconds to be safe
       _LOG_I("\t%8s->%8s:%8s\t%d", ActiveStatus.Program, Line->name_cycle,
@@ -164,7 +179,6 @@ void reset_active_status(void) {
   // Initialize any other fields as necessary
   ActiveStatus.CurrentTemp = 0;
   ActiveStatus.CurrentPower = 0;
-
 
   ActiveStatus.time_full_start = 0;
   ActiveStatus.time_full_total = 0;
@@ -189,10 +203,10 @@ void reset_active_status(void) {
   ActiveStatus.Step[0] = '\0';
   ActiveStatus.IPAddress[0] = '\0';
   ActiveStatus.FirmwareStatus[0] = '\0';
-//  ActiveStatus.Program[0] = '\0';
+  //  ActiveStatus.Program[0] = '\0';
   ActiveStatus.Cycle[0] = '\0';
   ActiveStatus.Step[0] = '\0';
-  //ActiveStatus.Program[0] = '\0';
+  // ActiveStatus.Program[0] = '\0';
   ActiveStatus.ActiveDevices[0] = '\0';
   ActiveStatus.ActiveLEDs[0] = '\0';
   // Assuming Active_Program is a struct, we need to reset its fields
@@ -208,5 +222,5 @@ void reset_active_status(void) {
   ActiveStatus.SoapHasDispensed = false;
   ActiveStatus.SkipStep = false;
 
-//  bool SoapHasDispensed = false;
+  //  bool SoapHasDispensed = false;
 }
