@@ -1,10 +1,14 @@
-// io.h
-// Public API for panel matrix LEDs and switches (ESP-IDF)
+#ifndef OTA_DISH_IO_H
+#define OTA_DISH_IO_H
 
-#pragma once
+// One-GPIO-per-device mode (Preset C):
+// - Switches (active-low): Start, Cancel, Delay, Quick Rinse
+// - LEDs (active-high): status_washing, status_sensing, status_drying, status_clean, control_lock
+//
+// Relays in use elsewhere: 33, 32, 25, 26, 27
+// ADC in use elsewhere:    34
 
 #include <stdbool.h>
-#include <stdint.h>
 #include "esp_err.h"
 #include "driver/gpio.h"
 
@@ -12,77 +16,78 @@
 extern "C" {
 #endif
 
-/* ========= Data types ========= */
+// ---- Compile-time marker for this wiring profile ----
+#define IO_ONEPIN_MODE 1
 
-typedef struct {
-  const char *name;
-  uint8_t row;      // panel wire id (1..14)
-  uint8_t col;      // panel wire id (1..14)
-  bool status;      // desired/current LED state
-} LED_struct;
+// ---- GPIO assignments (Preset C) ----
+// Switches (INPUT, internal pull-up; switch -> GND)
+#define IO_PIN_SW_START        GPIO_NUM_16
+#define IO_PIN_SW_CANCEL       GPIO_NUM_17
+#define IO_PIN_SW_DELAY        GPIO_NUM_18
+#define IO_PIN_SW_QUICK_RINSE  GPIO_NUM_19
 
-typedef struct {
-  const char *name;
-  uint8_t row;                // panel wire id (1..14)
-  uint8_t col;                // panel wire id (1..14)
-  bool Pressed_NOW;           // set true on the scan when a debounced press is first detected
-  bool Pressed_Registered;    // latched until cleared by user code
-} SWITCH_struct;
+// LEDs (OUTPUT, active-high; GPIO -> LED -> series resistor -> GND)
+#define IO_PIN_LED_STATUS_WASHING  GPIO_NUM_21
+#define IO_PIN_LED_STATUS_SENSING  GPIO_NUM_22
+#define IO_PIN_LED_STATUS_DRYING   GPIO_NUM_23
+#define IO_PIN_LED_STATUS_CLEAN    GPIO_NUM_13
+#define IO_PIN_LED_CONTROL_LOCK    GPIO_NUM_14
+
+// ---- Logical identifiers (stable across code) ----
+typedef enum {
+  IO_LED_STATUS_WASHING = 0,
+  IO_LED_STATUS_SENSING,
+  IO_LED_STATUS_DRYING,
+  IO_LED_STATUS_CLEAN,
+  IO_LED_CONTROL_LOCK,
+  IO_LED_COUNT
+} io_led_t;
 
 typedef enum {
-  LED_OFF = 0,
-  LED_ON  = 1,
-  LED_TOGGLE = 2,
-} led_cmd_t;
+  IO_SW_START = 0,
+  IO_SW_CANCEL,
+  IO_SW_DELAY,
+  IO_SW_QUICK_RINSE,
+  IO_SW_COUNT
+} io_switch_t;
 
-/* ========= Exposed tables & counts =========
-   NOTE: Do not modify these arrays from user code; use the API below.
-*/
-extern LED_struct    LEDS[];
-extern SWITCH_struct SWITCHES[];
-extern const size_t  LED_COUNT;
-extern const size_t  SWITCH_COUNT;
+// ---- Public API ----
 
-/* ========= Wire mapping ========= */
+/**
+ * @brief Configure all switch/LED GPIOs for Preset C.
+ *        - Switches: inputs with internal pull-ups
+ *        - LEDs: outputs, initialized OFF
+ */
+esp_err_t io_init_onepin(void);
 
-/** Bind a panel wire number to a specific ESP32 GPIO. */
-esp_err_t Matrix_BindWire(uint8_t wire, gpio_num_t gpio_num);
+/**
+ * @brief Set LED state (true = ON, false = OFF).
+ */
+void io_led_set(io_led_t led, bool on);
 
-/** Mark a panel wire as a fixed ground (no GPIO; permanently 0). */
-esp_err_t Matrix_BindWireFixedGND(uint8_t wire);
+/**
+ * @brief Convenience helpers.
+ */
+static inline void io_led_on (io_led_t led) { io_led_set(led, true);  }
+static inline void io_led_off(io_led_t led) { io_led_set(led, false); }
 
-/** Convenience: bind the default GPIO map from the harness comment (no I2C). */
-void Panel_BindDefaultGPIOMap(void);
+/**
+ * @brief Toggle an LED.
+ */
+void io_led_toggle(io_led_t led);
 
-/* ========= Initialization =========
-   Call _init_LED() and _init_Switch() once after binding wire→GPIO mappings.
-   Either function will spawn the background matrix task if not already running.
-*/
-esp_err_t _init_LED(void);
-esp_err_t _init_Switch(void);
+/**
+ * @brief Read a switch level (active-low): returns true when pressed.
+ *        Debounce is the caller's responsibility (or use your poll task).
+ */
+bool io_switch_pressed(io_switch_t sw);
 
-/* ========= LED control ========= */
-
-/** Set/toggle an LED by its name and update internal state. */
-esp_err_t LED_Toggle(const char *name, led_cmd_t op);
-
-/** Read current desired state (true if ON). */
-bool LED_Get(const char *name);
-
-/* ========= Switch helpers ========= */
-
-/** Clear the Pressed_Registered latch for a named switch. */
-void Switch_ClearRegistered(const char *name);
-
-/** Atomically read-and-clear Pressed_Registered for a named switch. */
-bool Switch_Consume(const char *name);
-
-/** True while the switch is stably held (debounced state). */
-bool Switch_IsHeld(const char *name);
-
-/** True only on the scan when the press edge was detected (does not clear). */
-bool Switch_PressedNow(const char *name);
+// (Optional) Simple poller you can start if you want edge logs/debounce internally.
+// Provide in io.c if desired, or omit.
+// void io_start_poll_task(UBaseType_t prio, uint32_t stack_bytes);
 
 #ifdef __cplusplus
 } // extern "C"
 #endif
+
+#endif // OTA_DISH_IO_H
