@@ -50,6 +50,7 @@ typedef enum {
   IO_SW_COUNT
 } io_switch_t;
 
+void io_led_set(io_led_t led, bool on);
 // ---- Public API ----
 
 /**
