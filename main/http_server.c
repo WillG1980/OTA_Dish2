@@ -335,6 +335,7 @@ __attribute__((weak)) void perform_action_SOAP(void) {
 }
 
 __attribute__((weak)) void perform_action_LEDS(void) {
+_LOG_I("Action LED test — toggle LEDs");
 io_test_all_leds_once();
 }
 __attribute__((weak)) void perform_action_CANCEL(void) {

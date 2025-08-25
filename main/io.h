@@ -64,7 +64,7 @@ void io_led_set(io_led_t led, bool on);
 
 /** @brief Toggle an LED. */
 void io_led_toggle(io_led_t led);
-void io_test_all_leds_once(void)
+void io_test_all_leds_once(void);
 /** @brief Convenience helpers. */
 static inline void io_led_on (io_led_t led) { io_led_set(led, true);  }
 static inline void io_led_off(io_led_t led) { io_led_set(led, false); }
