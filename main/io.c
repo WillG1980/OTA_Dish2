@@ -171,6 +171,33 @@ esp_err_t ui_pins_init(void) {
   _LOG_I("UI pins ready: 4 switches (16,17,18,19), 5 LEDs (21,22,23,13,14)");
   return ESP_OK;
 }
+#include "io.h"
+#include "freertos/FreeRTOS.h"
+#include "freertos/task.h"
+
+// One-shot: test every LED for 5s each (then stop)
+void io_test_all_leds_once(void) {
+  static const struct { io_led_t id; const char *name; } L[] = {
+    {IO_LED_STATUS_WASHING, "status_washing"},
+    {IO_LED_STATUS_SENSING, "status_sensing"},
+    {IO_LED_STATUS_DRYING,  "status_drying"},
+    {IO_LED_STATUS_CLEAN,   "status_clean"},
+    {IO_LED_CONTROL_LOCK,   "control_lock"},
+  };
+
+  for (size_t i = 0; i < sizeof(L)/sizeof(L[0]); ++i) {
+    _LOG_I("LED test: %s ON (5s)", L[i].name);
+    io_led_set(L[i].id, true);
+    vTaskDelay(pdMS_TO_TICKS(5000));
+
+    io_led_set(L[i].id, false);
+    _LOG_I("LED test: %s OFF", L[i].name);
+
+    vTaskDelay(pdMS_TO_TICKS(250)); // small gap before next LED
+  }
+
+  _LOG_I("LED test: complete.");
+}
 
 // Tiny poller example (debounce ~20 ms)
 void ui_poll_task(void *arg) {

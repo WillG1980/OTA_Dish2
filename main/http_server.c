@@ -335,30 +335,7 @@ __attribute__((weak)) void perform_action_SOAP(void) {
 }
 
 __attribute__((weak)) void perform_action_LEDS(void) {
-
-  int DELAY = pdMS_TO_TICKS(5000);
-
-  LED_Toggle("status_washing", LED_ON);
-  vTaskDelay(DELAY);
-  LED_Toggle("status_washing", LED_OFF);
-  LED_Toggle("status_sensing", LED_ON);
-  vTaskDelay(DELAY);
-  LED_Toggle("status_sensing", LED_OFF);
-  LED_Toggle("status_drying", LED_ON);
-  vTaskDelay(DELAY);
-  LED_Toggle("status_drying", LED_OFF);
-  LED_Toggle("status_clean", LED_ON);
-  vTaskDelay(DELAY);
-  LED_Toggle("status_clean", LED_OFF);
-  LED_Toggle("delay_1", LED_ON);
-  vTaskDelay(DELAY);
-  LED_Toggle("delay_1", LED_OFF);
-  LED_Toggle("delay_3", LED_ON);
-  vTaskDelay(DELAY);
-  LED_Toggle("delay_3", LED_OFF);
-  LED_Toggle("switch_4", LED_ON);
-  vTaskDelay(DELAY);
-  LED_Toggle("switch_4", LED_OFF);
+io_test_all_leds_once();
 }
 __attribute__((weak)) void perform_action_CANCEL(void) {
   _LOG_I("Action CANCEL — stop current and start Cancel program");
