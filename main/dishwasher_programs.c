@@ -166,25 +166,26 @@ prevTemp_rb_clear(&temps);
         _LOG_W("Skipping step as requested");
         break;
       }
-      if (ActiveStatus.HEAT_REQUESTED) {
-        prevTemp_rb_push(&temps, ActiveStatus.CurrentTemp);
-
+      if (ActiveStatus.HEAT_REQUESTED) { //Program says we need heat
+        prevTemp_rb_push(&temps, ActiveStatus.CurrentTemp);//store old heat value
         if ( (prevTemp_rb_recent(&temps, 1)>(ActiveStatus.CurrentTemp+2)) || (prevTemp_rb_recent(&temps, 1)<(ActiveStatus.CurrentTemp-2))) {
           _LOG_I("Temperature changed more then 2 degrees in 5 seconds Current %d Past %d",prevTemp_rb_recent(&temps,1), ActiveStatus.CurrentTemp);
-
+        }
+        
+        if ( (prevTemp_rb_recent(&temps, 12)>(ActiveStatus.CurrentTemp+10)) || (prevTemp_rb_recent(&temps, 12)<(ActiveStatus.CurrentTemp-10))) {
+          _LOG_I("Temperature changed more then 10 degrees in 1 minute Current %d Past %d",prevTemp_rb_recent(&temps,12), ActiveStatus.CurrentTemp);
         }
 
-        if (ActiveStatus.CurrentTemp < Line->max_temp) {
+        if (ActiveStatus.CurrentTemp < Line->max_temp) { //if BELOW set temp, turn on.
           _LOG_I("Turning HEAT ON: Current/Target Temp: %d / %d ",
                  ActiveStatus.CurrentTemp, Line->max_temp);
           gpio_mask_set(HEAT);
-        } else {
-          _LOG_I("Leaving HEAT OFF %d / %d ",
-                 ActiveStatus.CurrentTemp, Line->max_temp);
-          gpio_mask_clear(HEAT);
+        } else { // if @<Above TEMP, CLEAR heat. 
+          _LOG_I("Leaving HEAT OFF %d / %d ", ActiveStatus.CurrentTemp, Line->max_temp);
+          gpio_mask_clear(HEAT);        
         }
 
-      } else {
+      } else { //no Heat, force off
         gpio_mask_clear(HEAT);
       }
 
