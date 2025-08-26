@@ -6,8 +6,8 @@
     {
       "type": "board-esp32-devkit-c-v4",
       "id": "esp",
-      "top": -10,
-      "left": -60,
+      "top": -11.26,
+      "left": -63.5,
       "rotate": 90,
       "attrs": {}
     },
@@ -84,8 +84,8 @@
     {
       "type": "wokwi-pushbutton",
       "id": "sw_qr",
-      "top": -109,
-      "left": 240,
+      "top": -61,
+      "left": 28.8,
       "attrs": { "label": "Quick Rinse" }
     },
     {
@@ -122,6 +122,21 @@
       "top": -147.6,
       "left": -130.6,
       "attrs": { "color": "yellow", "label": "R_SOAP" }
+    },
+    { "type": "board-ds18b20", "id": "temp1", "top": 66.07, "left": -927.12, "attrs": {} },
+    {
+      "type": "wokwi-ntc-temperature-sensor",
+      "id": "ntc1",
+      "top": 31.4,
+      "left": -663,
+      "attrs": {}
+    },
+    {
+      "type": "wokwi-slide-potentiometer",
+      "id": "pot1",
+      "top": 72.2,
+      "left": -500.2,
+      "attrs": { "travelLength": "30" }
     }
   ],
   "connections": [
@@ -158,7 +173,10 @@
     [ "esp:26", "R_DRAIN_led:A", "blue", [] ],
     [ "R_DRAIN_led:C", "esp:GND.1", "yellow", [] ],
     [ "esp:27", "R_SOAP_led:A", "blue", [] ],
-    [ "R_SOAP_led:C", "esp:GND.1", "yellow", [] ]
+    [ "R_SOAP_led:C", "esp:GND.1", "yellow", [] ],
+    [ "pot1:GND", "esp:GND.2", "black", [ "v0" ] ],
+    [ "esp:3V3", "pot1:VCC", "green", [ "v0" ] ],
+    [ "pot1:SIG", "esp:34", "green", [ "h0" ] ]
   ],
   "serialMonitor": { "display": "terminal" },
   "dependencies": {}

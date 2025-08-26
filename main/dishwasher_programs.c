@@ -117,22 +117,18 @@ void run_program(void *pvParameters) {
       get_unix_epoch() + ActiveStatus.Active_Program.max_time;
   ActiveStatus.CyclesTotal = ActiveStatus.Active_Program.num_cycles;
   ActiveStatus.StepsTotal = ActiveStatus.Active_Program.num_lines;
-
   for (size_t l = 0; l < ActiveStatus.Active_Program.num_lines; l++) {
     ActiveStatus.StepIndex = l + 1;
-
     ProgramLineStruct *Line = &ActiveStatus.Active_Program.lines[l];
-
     if (strcmp(Line->name_cycle, old_cycle) != 0) {
-      // new cycle
       ActiveStatus.CycleIndex++;
       ActiveStatus.time_cycle_start = get_unix_epoch();
       ActiveStatus.time_cycle_total =
           get_unix_epoch() + Line->min_time; // rough estimate
       setCharArray(old_cycle, Line->name_cycle);
     }
-    gpio_mask_clear(HEAT | SPRAY | INLET | DRAIN | SOAP); // set all pins to off
 
+    gpio_mask_clear(HEAT | SPRAY | INLET | DRAIN | SOAP); // set all pins to off
     int TTR =
         (Line->max_time > Line->min_time) ? Line->max_time : Line->min_time;
     time_t target_time = get_unix_epoch() + TTR;
@@ -140,14 +136,19 @@ void run_program(void *pvParameters) {
     COPY_STRING(ActiveStatus.Cycle, Line->name_cycle);
     COPY_STRING(ActiveStatus.Step, Line->name_step);
 
-    _LOG_I("%8.8s->%8.8s->%8.8s  TTR:%d: MaskedBits: %s \n",
-           ActiveStatus.Program, Line->name_cycle, Line->name_step, TTR,
-           return_masked_bits(Line->gpio_mask,
-                              HEAT | SPRAY | INLET | DRAIN | SOAP));
+    _LOG_I("%8.8s->%8.8s->%8.8s  TTR:%d: MaskedBits: %s \n", ActiveStatus.Program, Line->name_cycle, Line->name_step, TTR, return_masked_bits(Line->gpio_mask,  HEAT | SPRAY | INLET | DRAIN | SOAP));
+    
     uint64_t gpio_mask = Line->gpio_mask;
+    _LOG_I("GPIO_MASK1",gpio_mask);
+    
     gpio_mask = gpio_mask & ALL_ACTORS; // only allow valid actors
+    _LOG_I("GPIO_MASK2",gpio_mask); 
     ActiveStatus.HEAT_REQUESTED = (gpio_mask & HEAT) ? true : false;
+    (ActiveStatus.HEAT_REQUESTED)?_LOG_I("HEAT REQUESTED"): _LOG_I("NO HEAT REQUESTED");
+
     gpio_mask &= ~HEAT;                 // remove HEAT, handle differently
+    _LOG_I("GPIO_MASK3",gpio_mask); 
+        
     gpio_mask_set(gpio_mask);           // set all pins to off
     vTaskDelay(pdMS_TO_TICKS(5 * SEC)); // run for 5 seconds minimum
 _LOG_I(" Programmed Line: %s, Called line: %s",  return_masked_bits(Line->gpio_mask,

@@ -37,14 +37,13 @@
 #include "driver/gpio.h"
 #include "esp_sleep.h"
 #include "esp_wifi.h"
+#include "http_parser.h"
+#include "io.h"
 #include "local_ota.h"
 #include "local_partitions.h"
 #include "local_time.h"
 #include "local_wifi.h"
 #include "logger.h"
-#include "io.h"
-#include "http_parser.h"
-
 
 static void enter_ship_mode_forever(void) {
   // Stop radios/subsystems (ignore errors if not started)
@@ -214,9 +213,9 @@ void app_main(void) {
 
   gpio_mask_config_outputs(ALL_ACTORS);
   gpio_mask_clear(HEAT | SPRAY | INLET | DRAIN | SOAP); // set all pins to off
-  
+
   _start_temp_monitor();
-  
+
   _LOG_I("Booting: %s", boot_partition_cstr());
   _LOG_I("Running: %s", running_partition_cstr());
   esp_log_level_set("*", ESP_LOG_DEBUG);
@@ -231,10 +230,10 @@ void app_main(void) {
   //  check_and_perform_ota();
   // Keep main alive but yield CPU — do not busy-loop
   while (1) {
-/*    if (strcmp(ActiveStatus.Cycle, "fini") == 0) {
-      log_uptime_hms();
-      enter_ship_mode_forever(); // load is finished, shut down
-    }*/
+    /*    if (strcmp(ActiveStatus.Cycle, "fini") == 0) {
+          log_uptime_hms();
+          enter_ship_mode_forever(); // load is finished, shut down
+        }*/
     vTaskDelay(pdMS_TO_TICKS(10000));
   }
 }
