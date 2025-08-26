@@ -150,7 +150,9 @@ void run_program(void *pvParameters) {
     gpio_mask &= ~HEAT;                 // remove HEAT, handle differently
     gpio_mask_set(gpio_mask);           // set all pins to off
     vTaskDelay(pdMS_TO_TICKS(5 * SEC)); // run for 5 seconds minimum
-/*
+_LOG_I(" Programmed Line: %s, Called line: %s",  return_masked_bits(Line->gpio_mask,
+                              HEAT | SPRAY | INLET | DRAIN | SOAP),  return_masked_bits(gpio_mask,
+                              HEAT | SPRAY | INLET | DRAIN | SOAP) );
 
 prevTemp_rb_clear(&temps);
     for (int i = 100; i < 120; ++i) prevTemp_rb_push(&temps, i);
