@@ -28,8 +28,7 @@
 #include <string.h>
 #include "ring_buffer.h"
 
-  RING_BUFFER_DEFINE(prevTemp_rb, int, 16);   // type=int, capacity=64 (power-of-two → fast wrap) 
-  
+RING_BUFFER_DEFINE(prevTemp_rb, int, 16);   // type=int, capacity=16 (power-of-two → fast wrap)
 
 static prevTemp_rb temps;  
 volatile status_struct ActiveStatus;
@@ -151,7 +150,16 @@ void run_program(void *pvParameters) {
     gpio_mask &= ~HEAT;                 // remove HEAT, handle differently
     gpio_mask_set(gpio_mask);           // set all pins to off
     vTaskDelay(pdMS_TO_TICKS(5 * SEC)); // run for 5 seconds minimum
+/*
 
+prevTemp_rb_clear(&temps);
+    for (int i = 100; i < 120; ++i) prevTemp_rb_push(&temps, i);
+
+    int newest = prevTemp_rb_recent(&temps, 0);   // newest
+    int oldest = prevTemp_rb_recent(&temps, prevTemp_rb_size(&temps)-1);
+    double avg = prevTemp_rb_average(&temps);
+    
+    */
     for (; TTR > 0; TTR -= 5) {
       if (ActiveStatus.SkipStep) {
         ActiveStatus.SkipStep = false;
