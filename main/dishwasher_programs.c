@@ -170,7 +170,7 @@ prevTemp_rb_clear(&temps);
         prevTemp_rb_push(&temps, ActiveStatus.CurrentTemp);
 
         if ( (prevTemp_rb_recent(&temps, 1)>(ActiveStatus.CurrentTemp+2)) || (prevTemp_rb_recent(&temps, 1)<(ActiveStatus.CurrentTemp-2))) {
-          _LOG_I("Temperature changed more then 2 degrees in 5 seconds Current %d Past %d",prevTemp_rb_recent(&temps, ActiveStatus.CurrentTemp);
+          _LOG_I("Temperature changed more then 2 degrees in 5 seconds Current %d Past %d",prevTemp_rb_recent(&temps,1), ActiveStatus.CurrentTemp);
 
         }
 
