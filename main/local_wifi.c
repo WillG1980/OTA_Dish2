@@ -283,5 +283,6 @@ esp_err_t local_wifi_init_and_connect(void)
 }
 
 bool is_connected(void) {
+    
     return s_connected;
 }

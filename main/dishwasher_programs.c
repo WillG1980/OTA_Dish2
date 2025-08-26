@@ -96,6 +96,8 @@ void prepare_programs(void) {
 void run_program(void *pvParameters) {
   (void)pvParameters;
 
+  int Previous_temp[12] = 0;
+
   _LOG_I("Program selected: %s", ActiveStatus.Program);
   gpio_mask_config_outputs(ALL_ACTORS);
   char old_cycle[6] = "\n";
@@ -143,7 +145,7 @@ void run_program(void *pvParameters) {
     uint64_t gpio_mask = Line->gpio_mask;
     gpio_mask = gpio_mask & ALL_ACTORS; // only allow valid actors
     ActiveStatus.HEAT_REQUESTED = (gpio_mask & HEAT) ? true : false;
-    gpio_mask &= ~HEAT; //remove HEAT, handle differently
+    gpio_mask &= ~HEAT;                 // remove HEAT, handle differently
     gpio_mask_set(gpio_mask);           // set all pins to off
     vTaskDelay(pdMS_TO_TICKS(5 * SEC)); // run for 5 seconds minimum
 
@@ -154,13 +156,17 @@ void run_program(void *pvParameters) {
         break;
       }
       if (ActiveStatus.HEAT_REQUESTED) {
+        Previous_temp[0]=ActiveStatus.CurrentTemp;
+
         if (ActiveStatus.CurrentTemp < Line->max_temp) {
-          _LOG_I("Turning HEAT ON: Current/Target Temp: %d / %d ", ActiveStatus.CurrentTemp,Line->max_temp);
+          _LOG_I("Turning HEAT ON: Current/Target Temp: %d / %d ",
+                 ActiveStatus.CurrentTemp, Line->max_temp);
           gpio_mask_set(HEAT);
         } else {
           _LOG_I("Leaving HEAT OFF");
           gpio_mask_clear(HEAT);
         }
+
       } else {
         gpio_mask_clear(HEAT);
       }
@@ -223,4 +229,68 @@ void reset_active_status(void) {
   ActiveStatus.SkipStep = false;
 
   //  bool SoapHasDispensed = false;
+
+
+  // ----- Config -----
+#define PREV_TEMP_CAP 16        // size X (ideally a power of two)
+
+#if ((PREV_TEMP_CAP & (PREV_TEMP_CAP - 1)) == 0)
+  // power-of-two size → fast wrap
+  #define WRAP(i) ((i) & (PREV_TEMP_CAP - 1))
+#else
+  #define WRAP(i) ((i) % PREV_TEMP_CAP)
+#endif
+
+// ----- Storage -----
+static int      prevTemp[PREV_TEMP_CAP]; // the ring buffer
+static uint32_t head = 0;                 // next write index
+static uint32_t count = 0;                // number of valid items (<= CAP)
+static long     sum = 0;                  // optional: running sum for O(1) average
+
+// Push a new value; overwrites oldest when full
+inline void prevTemp_push(int t)
+{
+    if (count < PREV_TEMP_CAP) {
+        sum += t;
+        prevTemp[WRAP(head)] = t;
+        head = WRAP(head + 1);
+        count++;
+    } else {
+        // buffer full: remove the value we're about to overwrite
+        int *slot = &prevTemp[WRAP(head)];
+        sum += t - *slot;   // update running sum
+        *slot = t;          // overwrite oldest
+        head = WRAP(head + 1);
+    }
+}
+
+// Get the i-th most recent value: i=0 → newest, i=count-1 → oldest
+inline int prevTemp_get_recent(uint32_t i)
+{
+    // caller should ensure i < count
+    uint32_t newest_idx = WRAP(head + PREV_TEMP_CAP - 1);
+    return prevTemp[WRAP(newest_idx - i)];
+}
+
+// Optional: average of current window (integer-rounded)
+inline int prevTemp_avg(void)
+{
+    if (count == 0) return 0;
+    long s = sum;                          // if multi-threaded, protect this
+    return (int)((s + (count/2)) / (long)count);
+}
+
+// Iterate in chronological order (oldest → newest)
+inline void prevTemp_for_each(void (*fn)(int value))
+{
+    uint32_t n = count;
+    uint32_t start = (count < PREV_TEMP_CAP)
+                   ? 0
+                   : head;                 // when full, head == oldest index
+    for (uint32_t i = 0; i < n; ++i) {
+        int v = prevTemp[WRAP(start + i)];
+        fn(v);
+    }
+}
+
 }
