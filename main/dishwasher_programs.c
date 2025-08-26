@@ -156,7 +156,7 @@ _LOG_I(" Programmed Line: %s, Called line: %s",  return_masked_bits(Line->gpio_m
 
 prevTemp_rb_clear(&temps);
     for (int i = 100; i < 120; ++i) prevTemp_rb_push(&temps, i);
-
+/*
     int newest = prevTemp_rb_recent(&temps, 0);   // newest
     int oldest = prevTemp_rb_recent(&temps, prevTemp_rb_size(&temps)-1);
     double avg = prevTemp_rb_average(&temps);
