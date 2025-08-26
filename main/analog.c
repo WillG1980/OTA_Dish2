@@ -251,7 +251,8 @@ static void temp_sampler_task(void *arg) {
   while (s_running) {
     const uint32_t t_loop = now_ms();
 
-    if (!program_running()) {
+    //if (!program_running()) {
+            if (false) {
       // idle: do not collect or log; sleep a bit, clear EWMA so we don't carry
       // stale state
       if (!isnan(s_ewma))

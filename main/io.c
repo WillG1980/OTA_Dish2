@@ -24,7 +24,7 @@ static const gpio_num_t SW_GPIO[IO_SW_COUNT] = {
   IO_PIN_SW_START,        // IO_SW_START
   IO_PIN_SW_CANCEL,       // IO_SW_CANCEL
   IO_PIN_SW_DELAY,        // IO_SW_DELAY
-  IO_PIN_SW_QUICK_RINSE,  // IO_SW_QUICK_RINSE
+  
 };
 
 // ===== Basic LED/Switch helpers =====
