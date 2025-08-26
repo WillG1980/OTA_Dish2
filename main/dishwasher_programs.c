@@ -179,7 +179,8 @@ prevTemp_rb_clear(&temps);
                  ActiveStatus.CurrentTemp, Line->max_temp);
           gpio_mask_set(HEAT);
         } else {
-          _LOG_I("Leaving HEAT OFF");
+          _LOG_I("Leaving HEAT OFF %d / %d ",
+                 ActiveStatus.CurrentTemp, Line->max_temp);
           gpio_mask_clear(HEAT);
         }
 
