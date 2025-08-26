@@ -26,7 +26,12 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include "ring_buffer.h"
 
+  RING_BUFFER_DEFINE(prevTemp_rb, int, 16);   // type=int, capacity=64 (power-of-two → fast wrap) 
+  
+
+static prevTemp_rb temps;  
 volatile status_struct ActiveStatus;
 
 static bool verify_program() {
