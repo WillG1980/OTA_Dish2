@@ -144,7 +144,7 @@ void run_program(void *pvParameters) {
     gpio_mask = gpio_mask & ALL_ACTORS; // only allow valid actors
     _LOG_I("GPIO_MASK2",gpio_mask); 
     ActiveStatus.HEAT_REQUESTED = (gpio_mask & HEAT) ? true : false;
-    (ActiveStatus.HEAT_REQUESTED)?_LOG_I("HEAT REQUESTED"): _LOG_I("NO HEAT REQUESTED");
+    if (ActiveStatus.HEAT_REQUESTED) {_LOG_I("HEAT REQUESTED");} else{ _LOG_I("NO HEAT REQUESTED");}
 
     gpio_mask &= ~HEAT;                 // remove HEAT, handle differently
     _LOG_I("GPIO_MASK3",gpio_mask); 
