@@ -30,7 +30,7 @@
 
 RING_BUFFER_DEFINE(prevTemp_rb, int, 16);   // type=int, capacity=16 (power-of-two → fast wrap)
 
-static prevTemp_rb temps;  
+prevTemp_rb temps;  
 volatile status_struct ActiveStatus;
 
 static bool verify_program() {
@@ -167,7 +167,12 @@ prevTemp_rb_clear(&temps);
         break;
       }
       if (ActiveStatus.HEAT_REQUESTED) {
-        
+        prevTemp_rb_push(&temps, ActiveStatus.CurrentTemp);
+
+        if ( (prevTemp_rb_recent(&temps, 1)>(ActiveStatus.CurrentTemp+2)) || (prevTemp_rb_recent(&temps, 1)<(ActiveStatus.CurrentTemp-2))) {
+          _LOG_I("Temperature changed more then 2 degrees in 5 seconds Current %d Past %d",prevTemp_rb_recent(&temps, ActiveStatus.CurrentTemp);
+
+        }
 
         if (ActiveStatus.CurrentTemp < Line->max_temp) {
           _LOG_I("Turning HEAT ON: Current/Target Temp: %d / %d ",
