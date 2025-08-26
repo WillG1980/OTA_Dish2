@@ -167,7 +167,7 @@ prevTemp_rb_clear(&temps);
         break;
       }
       if (ActiveStatus.HEAT_REQUESTED) {
-        Previous_temp[0]=ActiveStatus.CurrentTemp;
+        
 
         if (ActiveStatus.CurrentTemp < Line->max_temp) {
           _LOG_I("Turning HEAT ON: Current/Target Temp: %d / %d ",
