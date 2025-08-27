@@ -216,6 +216,7 @@ static void collect_full_sample(SampleStats *out) {
   else
     s_ewma = (1.0f - EWMA_ALPHA) * s_ewma + EWMA_ALPHA * mean_raw_f;
 
+    float temp_f_linear = 0.059031f * (float)raw_to_mv(out->raw_mean) + 27.381f;
   // Populate struct
   out->raw_inst = buf[OVERSAMPLE_N - 1];
   out->raw_min = min_raw;
@@ -226,6 +227,10 @@ static void collect_full_sample(SampleStats *out) {
   out->mv_mean = raw_to_mv(out->raw_mean);
   out->ewma = s_ewma;
   out->Rth_ohm = compute_rth_ohms_from_mv((float)out->mv_mean);
+  
+
+  out->tempF=(int)(temp_f_linear + 0.5f); // round to nearest int
+
   out->tempC = tempC_from_beta(out->Rth_ohm);
   out->tempF = isnan(out->tempC) ? NAN : (out->tempC * 9.0f / 5.0f + 32.0f);
 }
@@ -278,11 +283,8 @@ static void temp_sampler_task(void *arg) {
                THERM_ON_TOP ? 1 : 0, (double)R_KNOWN_OHMS, (double)st.Rth_ohm,
                (double)st.tempC, (double)st.tempF, OVERSAMPLE_N);
 
-        float temp_f = 0.059031f * (float)st.mv_mean + 27.381f;
-        ActiveStatus.CurrentTemp= (int)(temp_f + 0.5f); // round to nearest int
 
-        _LOG_I("update_current_temp_from_adc(): mv_mean=%d → Temp=%d°F",
-               st.mv_mean, ActiveStatus.CurrentTemp);
+         _LOG_I("update_current_temp_from_adc(): mv_mean=%d → Temp=%d°F", st.mv_mean, ActiveStatus.CurrentTemp);               
       }
 
       // pacing to maintain collection cadence
