@@ -103,7 +103,7 @@ void run_program(void *pvParameters) {
   _LOG_I("Program selected: %s", ActiveStatus.Program);
   gpio_mask_config_outputs(ALL_ACTORS);
   char old_cycle[6] = "\n";
-
+  
   if (!verify_program()) {
     setCharArray(ActiveStatus.Program, "INVALID");
     _LOG_E("Invalid program selected: %s", ActiveStatus.Program);
@@ -117,7 +117,11 @@ void run_program(void *pvParameters) {
       get_unix_epoch() + ActiveStatus.Active_Program.max_time;
   ActiveStatus.CyclesTotal = ActiveStatus.Active_Program.num_cycles;
   ActiveStatus.StepsTotal = ActiveStatus.Active_Program.num_lines;
+  
+  
+  
   for (size_t l = 0; l < ActiveStatus.Active_Program.num_lines; l++) {
+    ActiveStatus.HEAT_REACHED=false;
     ActiveStatus.StepIndex = l + 1;
     ProgramLineStruct *Line = &ActiveStatus.Active_Program.lines[l];
     if (strcmp(Line->name_cycle, old_cycle) != 0) {
@@ -129,9 +133,11 @@ void run_program(void *pvParameters) {
     }
 
     gpio_mask_clear(HEAT | SPRAY | INLET | DRAIN | SOAP); // set all pins to off
-    int TTR =
-        (Line->max_time > Line->min_time) ? Line->max_time : Line->min_time;
-    time_t target_time = get_unix_epoch() + TTR;
+    int TTR_max = (Line->max_time > Line->min_time) ? Line->max_time : Line->min_time;
+    int TTR_min =  Line->min_time;
+    int TTR_Diff = TTR_max - TTR_min;
+    int TTR=0;
+    time_t target_time = get_unix_epoch() + TTR_max;
 
     COPY_STRING(ActiveStatus.Cycle, Line->name_cycle);
     COPY_STRING(ActiveStatus.Step, Line->name_step);
@@ -139,34 +145,38 @@ void run_program(void *pvParameters) {
     _LOG_I("%8.8s->%8.8s->%8.8s  TTR:%d: MaskedBits: %s \n", ActiveStatus.Program, Line->name_cycle, Line->name_step, TTR, return_masked_bits(Line->gpio_mask,  HEAT | SPRAY | INLET | DRAIN | SOAP));
     
     uint64_t gpio_mask = Line->gpio_mask;
-    _LOG_I("GPIO_MASK1",gpio_mask);
+  //  _LOG_I("GPIO_MASK1",gpio_mask);
     
     gpio_mask = gpio_mask & ALL_ACTORS; // only allow valid actors
-    _LOG_I("GPIO_MASK2",gpio_mask); 
+//    _LOG_I("GPIO_MASK2",gpio_mask); 
     ActiveStatus.HEAT_REQUESTED = (gpio_mask & HEAT) ? true : false;
     if (ActiveStatus.HEAT_REQUESTED) {
       _LOG_I("HEAT REQUESTED");
+      TTR=TTR_max;
     } else{
        _LOG_I("NO HEAT REQUESTED");
+       TTR=TTR_min;
       }
 
     gpio_mask &= ~HEAT;                 // remove HEAT, handle differently
-    _LOG_I("GPIO_MASK3",gpio_mask); 
+  //  _LOG_I("GPIO_MASK3",gpio_mask); 
         
     gpio_mask_set(gpio_mask);           // set all pins to off
     vTaskDelay(pdMS_TO_TICKS(5 * SEC)); // run for 5 seconds minimum
-_LOG_I(" Programmed Line: %s, Called line: %s",  return_masked_bits(Line->gpio_mask,
-                              HEAT | SPRAY | INLET | DRAIN | SOAP),  return_masked_bits(gpio_mask,
-                              HEAT | SPRAY | INLET | DRAIN | SOAP) );
+    _LOG_I(" Programmed Line: %s, Called line: %s",  return_masked_bits(Line->gpio_mask,ALL_ACTORS),  return_masked_bits(gpio_mask,ALL_ACTORS) );
 
-prevTemp_rb_clear(&temps);
-    for (int i = 100; i < 120; ++i) prevTemp_rb_push(&temps, i);
+//    prevTemp_rb_clear(&temps);
+//    for (int i = 100; i < 120; ++i) prevTemp_rb_push(&temps, i);
 /*
     int newest = prevTemp_rb_recent(&temps, 0);   // newest
     int oldest = prevTemp_rb_recent(&temps, prevTemp_rb_size(&temps)-1);
     double avg = prevTemp_rb_average(&temps);
     
     */
+   char masked_bits=return_masked_bits(Line->gpio_mask, ALL_ACTORS);
+   int max_heat;
+   ActiveStatus.HEAT_REACHED=false;
+  
     for (; TTR > 0; TTR -= 5) {
       if (ActiveStatus.SkipStep) {
         ActiveStatus.SkipStep = false;
@@ -174,6 +184,9 @@ prevTemp_rb_clear(&temps);
         break;
       }
       if (ActiveStatus.HEAT_REQUESTED) { //Program says we need heat
+
+        (ActiveStatus.CurrentTemp>max_heat)?max_heat=ActiveStatus.CurrentTemp:NULL;
+
         prevTemp_rb_push(&temps, ActiveStatus.CurrentTemp);//store old heat value
         if ( (prevTemp_rb_recent(&temps, 1)>(ActiveStatus.CurrentTemp+2)) || (prevTemp_rb_recent(&temps, 1)<(ActiveStatus.CurrentTemp-2))) {
           _LOG_I("Temperature changed more then 2 degrees in 5 seconds Current %d Past %d",prevTemp_rb_recent(&temps,1), ActiveStatus.CurrentTemp);
@@ -182,6 +195,12 @@ prevTemp_rb_clear(&temps);
         if ( (prevTemp_rb_recent(&temps, 12)>(ActiveStatus.CurrentTemp+10)) || (prevTemp_rb_recent(&temps, 12)<(ActiveStatus.CurrentTemp-10))) {
           _LOG_I("Temperature changed more then 10 degrees in 1 minute Current %d Past %d",prevTemp_rb_recent(&temps,12), ActiveStatus.CurrentTemp);
         }
+
+
+        if(ActiveStatus.CurrentTemp>=Line->min_temp){
+          ActiveStatus.HEAT_REACHED=true;
+        }
+
 
         if (ActiveStatus.CurrentTemp < Line->max_temp) { //if BELOW set temp, turn on.
           _LOG_I("Turning HEAT ON: Current/Target Temp: %d / %d ",
@@ -195,9 +214,9 @@ prevTemp_rb_clear(&temps);
         gpio_mask_clear(HEAT);
       }
 
-      gpio_mask_set(gpio_mask); // set all pins to on every 5 seconds to be safe
-      _LOG_I("\t%8s->%8s:%8s\t%d", ActiveStatus.Program, Line->name_cycle,
-             Line->name_step, TTR);
+      gpio_mask_set(gpio_mask); // set all pins to on every 5 seconds to be safe, HEAT is handled separately
+
+      _LOG_I("\t%8s->%8s:%8s\t%d\t%s", ActiveStatus.Program, Line->name_cycle, Line->name_step, TTR, masked_bits);
       vTaskDelay(pdMS_TO_TICKS(5000));
     }
   }

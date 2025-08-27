@@ -337,7 +337,7 @@ typedef struct {
   char ActiveDevices[NUM_DEVICES]; // result of return_masked_bits
   char ActiveLEDs[NUM_LEDS];       // bitmask of active LED names
   bool SoapHasDispensed;
-
+  bool HEAT_REACHED;
   uint64_t ActiveDeviceMask; // BIT64 mask of all active devices
   int32_t StepIndex;
   int32_t StepsTotal;
