@@ -227,12 +227,10 @@ static void collect_full_sample(SampleStats *out) {
   out->mv_mean = raw_to_mv(out->raw_mean);
   out->ewma = s_ewma;
   out->Rth_ohm = compute_rth_ohms_from_mv((float)out->mv_mean);
+  out->tempF=(int)(temp_f_linear + 0.5f); // round to nearest int
+  out->tempC = ((out->tempF) - 32) * 5/9;
   
 
-  out->tempF=(int)(temp_f_linear + 0.5f); // round to nearest int
-
-  out->tempC = tempC_from_beta(out->Rth_ohm);
-  out->tempF = isnan(out->tempC) ? NAN : (out->tempC * 9.0f / 5.0f + 32.0f);
 }
 
 // ──────────────────────────────────────────────────────────────────────────────
