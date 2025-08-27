@@ -185,7 +185,7 @@ void run_program(void *pvParameters) {
       }
       if (ActiveStatus.HEAT_REQUESTED) { //Program says we need heat
 
-        (ActiveStatus.CurrentTemp>max_heat)?max_heat=ActiveStatus.CurrentTemp:NULL;
+        (ActiveStatus.CurrentTemp>max_heat)?max_heat=ActiveStatus.CurrentTemp:max_heat=max_heat;
 
         prevTemp_rb_push(&temps, ActiveStatus.CurrentTemp);//store old heat value
         if ( (prevTemp_rb_recent(&temps, 1)>(ActiveStatus.CurrentTemp+2)) || (prevTemp_rb_recent(&temps, 1)<(ActiveStatus.CurrentTemp-2))) {
