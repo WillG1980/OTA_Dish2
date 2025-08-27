@@ -173,7 +173,7 @@ void run_program(void *pvParameters) {
     double avg = prevTemp_rb_average(&temps);
     
     */
-   char masked_bits=return_masked_bits(Line->gpio_mask, ALL_ACTORS);
+   char *masked_bits=return_masked_bits(Line->gpio_mask, ALL_ACTORS);
    int max_heat;
    ActiveStatus.HEAT_REACHED=false;
   
