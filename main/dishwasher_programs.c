@@ -174,7 +174,7 @@ void run_program(void *pvParameters) {
     
     */
    char *masked_bits=return_masked_bits(Line->gpio_mask, ALL_ACTORS);
-   int max_heat;
+   int max_heat=0;
    ActiveStatus.HEAT_REACHED=false;
   
     for (; TTR > 0; TTR -= 5) {
