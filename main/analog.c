@@ -216,7 +216,7 @@ static void collect_full_sample(SampleStats *out) {
   else
     s_ewma = (1.0f - EWMA_ALPHA) * s_ewma + EWMA_ALPHA * mean_raw_f;
 
-    float temp_f_linear = 0.059031f * (float)raw_to_mv(out->raw_mean) + 27.381f;
+  float temp_f_linear = 0.059031f * (float)raw_to_mv(out->raw_mean) + 27.381f;
   // Populate struct
   out->raw_inst = buf[OVERSAMPLE_N - 1];
   out->raw_min = min_raw;
