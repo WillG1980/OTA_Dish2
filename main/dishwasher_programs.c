@@ -144,7 +144,11 @@ void run_program(void *pvParameters) {
     gpio_mask = gpio_mask & ALL_ACTORS; // only allow valid actors
     _LOG_I("GPIO_MASK2",gpio_mask); 
     ActiveStatus.HEAT_REQUESTED = (gpio_mask & HEAT) ? true : false;
-    if (ActiveStatus.HEAT_REQUESTED) {_LOG_I("HEAT REQUESTED");} else{ _LOG_I("NO HEAT REQUESTED");}
+    if (ActiveStatus.HEAT_REQUESTED) {
+      _LOG_I("HEAT REQUESTED");
+    } else{
+       _LOG_I("NO HEAT REQUESTED");
+      }
 
     gpio_mask &= ~HEAT;                 // remove HEAT, handle differently
     _LOG_I("GPIO_MASK3",gpio_mask); 
@@ -187,13 +191,11 @@ prevTemp_rb_clear(&temps);
           _LOG_I("Leaving HEAT OFF %d / %d ", ActiveStatus.CurrentTemp, Line->max_temp);
           gpio_mask_clear(HEAT);        
         }
-
       } else { //no Heat, force off
         gpio_mask_clear(HEAT);
       }
 
-      gpio_mask_set(
-          Line->gpio_mask); // set all pins to on every 5 seconds to be safe
+      gpio_mask_set(gpio_mask); // set all pins to on every 5 seconds to be safe
       _LOG_I("\t%8s->%8s:%8s\t%d", ActiveStatus.Program, Line->name_cycle,
              Line->name_step, TTR);
       vTaskDelay(pdMS_TO_TICKS(5000));
