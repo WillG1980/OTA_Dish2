@@ -147,7 +147,7 @@ void run_program(void *pvParameters) {
 
     // Update indices and labels
     ActiveStatus.StepIndex = (int32_t)(li + 1);
-    if (strcmp(SAFE_STR(Line->name_cycle), SAFE_STR(last_cycle)) != 0) {
+    if (strcmp(SAFE_STR(Line->name_cycle), last_cycle) != 0) {
       ActiveStatus.CycleIndex++;
       ActiveStatus.time_cycle_start = get_unix_epoch();
       ActiveStatus.time_cycle_total = ActiveStatus.time_cycle_start + (Line->min_time ? Line->min_time : 0);
