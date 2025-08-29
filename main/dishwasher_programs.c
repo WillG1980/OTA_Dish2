@@ -338,7 +338,7 @@ void run_program(void *pvParameters) {
              SAFE_STR(Line->name_cycle),
              SAFE_STR(Line->name_step),
              (long)(get_unix_epoch() - line_start),
-             (long)(line_max))  ;
+             (long)(base_max))  ;
 
       // Exit conditions
       time_t now = get_unix_epoch();
