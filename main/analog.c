@@ -281,7 +281,7 @@ static void temp_sampler_task(void *arg) {
                THERM_ON_TOP ? 1 : 0, (double)R_KNOWN_OHMS, (double)st.Rth_ohm,
                (double)st.tempC, (double)st.tempF, OVERSAMPLE_N);
 
-
+ActiveStatus.CurrentTemp=st.tempF;
          _LOG_I("update_current_temp_from_adc(): mv_mean=%d → Temp=%d°F", st.mv_mean, ActiveStatus.CurrentTemp);               
       }
 
