@@ -333,11 +333,12 @@ void run_program(void *pvParameters) {
       gpio_mask_set(actor_mask);
 
       // Progress log (retain concise I; Ds elsewhere)
-      _LOG_I("%8s->%8s:%8s elapsed=%ld sec",
+      _LOG_I("%8s->%8s:%8s elapsed=%ld sec\tTargettime=%d sec",
              SAFE_STR(ActiveStatus.Program),
              SAFE_STR(Line->name_cycle),
              SAFE_STR(Line->name_step),
-             (long)(get_unix_epoch() - line_start));
+             (long)(get_unix_epoch() - line_start),
+             (long)(line_max))  ;
 
       // Exit conditions
       time_t now = get_unix_epoch();

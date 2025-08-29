@@ -271,18 +271,18 @@ static void temp_sampler_task(void *arg) {
         //_LOG_I("Current ADC reading: %d", (int)lroundf(st.ewma));
 
         // Rich structured line for detailed analysis
+ActiveStatus.CurrentTemp=st.tempF;
         _LOG_I("ADC_SAMPLE "
                "{raw_inst:%d,mv_inst:%d,raw_mean:%d,mv_mean:%d,raw_min:%d,raw_"
                "max:%d,raw_std:%.1f,ewma:%.1f,atten_db:%d,bit:%d,vs_mv:%.0f,"
-               "top:%d,Rk_ohm:%.0f,Rth_ohm:%.0f,tempC:%.2f,tempF:%.2f,os_n:%d}",
+               "top:%d,Rk_ohm:%.0f,Rth_ohm:%.0f,tempC:%.2f,tempF:%.2f,ReportedTemp:%d,os_n:%d}",
                st.raw_inst, st.mv_inst, st.raw_mean, st.mv_mean, st.raw_min,
                st.raw_max, (double)st.raw_std, (double)st.ewma,
                (int)ANALOG_ADC_ATTEN, (int)ANALOG_BITWIDTH, (double)VSUPPLY_MV,
                THERM_ON_TOP ? 1 : 0, (double)R_KNOWN_OHMS, (double)st.Rth_ohm,
-               (double)st.tempC, (double)st.tempF, OVERSAMPLE_N);
+               (double)st.tempC, (double)st.tempF, ActiveStatus.CurrentTemp, OVERSAMPLE_N);
 
-ActiveStatus.CurrentTemp=st.tempF;
-         _LOG_I("update_current_temp_from_adc(): mv_mean=%d → Temp=%d°F", st.mv_mean, ActiveStatus.CurrentTemp);               
+//         _LOG_I("update_current_temp_from_adc(): mv_mean=%d → Temp=%d°F", st.mv_mean, ActiveStatus.CurrentTemp);               
       }
 
       // pacing to maintain collection cadence
